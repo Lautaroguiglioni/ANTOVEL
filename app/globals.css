@@ -1,0 +1,213 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Antovel base palette */
+  --background: #080810;
+  --foreground: #e8e8f0;
+  --surface: #12121e;
+  --surface-elevated: #1a1a28;
+  --muted: #6b6b80;
+  --muted-foreground: #9a9aae;
+  --border: rgba(232, 232, 240, 0.08);
+  --border-strong: rgba(232, 232, 240, 0.16);
+
+  /* Neural accents */
+  --neural-violet: #7c3aed;
+  --neural-cyan: #06b6d4;
+  --neural-magenta: #ec4899;
+
+  /* Semantic */
+  --primary: var(--neural-violet);
+  --primary-foreground: #ffffff;
+  --accent: var(--neural-cyan);
+  --accent-foreground: #ffffff;
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--surface-elevated);
+  --secondary-foreground: var(--foreground);
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --input: var(--surface-elevated);
+  --ring: var(--neural-violet);
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-neural-violet: var(--neural-violet);
+  --color-neural-cyan: var(--neural-cyan);
+  --color-neural-magenta: var(--neural-magenta);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Dot grid background */
+.bg-dot-grid {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(232, 232, 240, 0.06) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+/* Neural nebula — animated radial gradients */
+.bg-neural-nebula {
+  position: relative;
+  isolation: isolate;
+}
+.bg-neural-nebula::before,
+.bg-neural-nebula::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(60px);
+  opacity: 0.15;
+}
+.bg-neural-nebula::before {
+  background: radial-gradient(
+      circle at 20% 30%,
+      var(--neural-violet) 0%,
+      transparent 40%
+    ),
+    radial-gradient(circle at 80% 70%, var(--neural-cyan) 0%, transparent 45%);
+  animation: nebula-drift 24s ease-in-out infinite alternate;
+}
+.bg-neural-nebula::after {
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--neural-magenta) 0%,
+    transparent 35%
+  );
+  opacity: 0.08;
+  animation: nebula-drift 32s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes nebula-drift {
+  0% {
+    transform: translate(-4%, -2%) scale(1);
+  }
+  50% {
+    transform: translate(3%, 4%) scale(1.08);
+  }
+  100% {
+    transform: translate(-2%, 3%) scale(1.02);
+  }
+}
+
+/* Glow utility for primary CTA */
+.glow-violet {
+  box-shadow:
+    0 0 0 1px rgba(124, 58, 237, 0.4),
+    0 8px 24px -8px rgba(124, 58, 237, 0.6),
+    0 0 32px -8px rgba(124, 58, 237, 0.5);
+}
+.glow-violet-hover:hover {
+  box-shadow:
+    0 0 0 1px rgba(124, 58, 237, 0.6),
+    0 12px 40px -8px rgba(124, 58, 237, 0.8),
+    0 0 48px -4px rgba(124, 58, 237, 0.7);
+}
+
+/* Slide transitions for onboarding */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 350ms ease-in-out;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 350ms ease-in-out;
+}
+
+/* Pulse for the brain logo dot */
+@keyframes neural-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+.animate-neural-pulse {
+  animation: neural-pulse 2.4s ease-in-out infinite;
+}
