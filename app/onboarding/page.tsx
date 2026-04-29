@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
 import { ArrowRight, ChevronLeft } from "lucide-react"
 import { useOnboarding } from "@/hooks/useOnboarding"
 import { AntovelLogo } from "@/components/onboarding/AntovelLogo"
@@ -16,6 +17,23 @@ import { StepWelcome } from "@/components/onboarding/StepWelcome"
 import { StepPersonalData } from "@/components/onboarding/StepPersonalData"
 import { StepPurpose } from "@/components/onboarding/StepPurpose"
 import { StepPrivacy } from "@/components/onboarding/StepPrivacy"
+
+/**
+ * Slide variants — directional horizontal translate + fade.
+ * `custom` carries the navigation direction so the same variants
+ * resolve into mirrored animations for forward vs back.
+ */
+const slideVariants = {
+  enter: (dir: "forward" | "back") => ({
+    x: dir === "forward" ? 64 : -64,
+    opacity: 0,
+  }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: "forward" | "back") => ({
+    x: dir === "forward" ? -64 : 64,
+    opacity: 0,
+  }),
+}
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -66,8 +84,8 @@ export default function OnboardingPage() {
   const handleNext = () => {
     if (!canAdvance || activating) return
     if (isLast) {
-      complete()
-      // Activation animation: logo pulses 1.5s, then navigate.
+      complete() // saves to localStorage `antovel_user_data`
+      // 1.5s activation choreography, then navigate.
       setActivating(true)
       window.setTimeout(() => {
         router.push("/brain")
@@ -76,11 +94,6 @@ export default function OnboardingPage() {
     }
     next()
   }
-
-  const animClass =
-    direction === "forward"
-      ? "animate-slide-in-right"
-      : "animate-slide-in-left"
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
@@ -92,16 +105,27 @@ export default function OnboardingPage() {
         <ProgressDots total={totalSteps} current={step} />
       </header>
 
-      {/* Step content */}
-      <section className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
-        <div key={step} className={animClass}>
-          {step === 0 && <StepWelcome />}
-          {step === 1 && (
-            <StepPersonalData profile={profile} onChange={update} />
-          )}
-          {step === 2 && <StepPurpose profile={profile} onChange={update} />}
-          {step === 3 && <StepPrivacy profile={profile} onChange={update} />}
-        </div>
+      {/* Step content — directional slide + fade with framer-motion */}
+      <section className="relative flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
+        <AnimatePresence mode="wait" custom={direction} initial={false}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+            className="flex w-full justify-center"
+          >
+            {step === 0 && <StepWelcome />}
+            {step === 1 && (
+              <StepPersonalData profile={profile} onChange={update} />
+            )}
+            {step === 2 && <StepPurpose profile={profile} onChange={update} />}
+            {step === 3 && <StepPrivacy profile={profile} onChange={update} />}
+          </motion.div>
+        </AnimatePresence>
       </section>
 
       {/* Bottom CTA */}
@@ -130,8 +154,8 @@ export default function OnboardingPage() {
       </footer>
 
       {/* ─── Activation overlay (1.5s) ─────────────────────────────
-          1. logo fades in + pulses
-          2. fades out → navigation to /brain
+          Logo fades in, pulses with intense glow, then fades out
+          while the router navigates to /brain.
           ────────────────────────────────────────────────────────── */}
       {activating && (
         <div
@@ -139,14 +163,14 @@ export default function OnboardingPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-activation-fade"
         >
           <div className="relative flex h-56 w-56 items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.55)_0%,rgba(6,182,212,0.18)_45%,transparent_70%)] blur-2xl animate-activation-glow" />
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.7)_0%,rgba(6,182,212,0.22)_45%,transparent_70%)] blur-2xl animate-activation-glow" />
             <Image
               src="/antovel-logo.png"
               alt=""
               width={320}
               height={320}
               priority
-              className="relative h-44 w-44 object-contain mix-blend-screen drop-shadow-[0_0_36px_rgba(167,139,250,0.7)] animate-activation-pulse"
+              className="relative h-44 w-44 object-contain mix-blend-screen drop-shadow-[0_0_44px_rgba(167,139,250,0.85)] animate-activation-pulse"
             />
           </div>
         </div>

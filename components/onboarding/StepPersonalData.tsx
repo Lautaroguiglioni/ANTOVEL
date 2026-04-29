@@ -1,9 +1,10 @@
 "use client"
 
-import { useId, useRef } from "react"
+import { useEffect, useId, useRef } from "react"
 import { Camera, Lock, User } from "lucide-react"
 import type { AntovelProfile } from "@/lib/types"
 import { calculateAge } from "@/hooks/useOnboarding"
+import { CityAutocomplete } from "@/components/onboarding/CityAutocomplete"
 
 type Props = {
   profile: Partial<AntovelProfile>
@@ -21,8 +22,19 @@ export function StepPersonalData({ profile, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dateId = useId()
 
-  const age =
-    profile.age ?? (profile.birthDate ? calculateAge(profile.birthDate) : null)
+  // Read-only age field — recalculated reactively whenever the
+  // birthDate picker changes (per spec: explicit useEffect).
+  useEffect(() => {
+    if (profile.birthDate) {
+      const next = calculateAge(profile.birthDate)
+      if (profile.age !== next) onChange({ age: next })
+    } else if (profile.age !== undefined) {
+      onChange({ age: undefined })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.birthDate])
+
+  const age = profile.age
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -102,7 +114,7 @@ export function StepPersonalData({ profile, onChange }: Props) {
         className={inputCx + " mb-5"}
       />
 
-      {/* Birthdate */}
+      {/* Birthdate + Age (read-only) */}
       <div className="mb-5 flex items-end gap-3">
         <div className="flex-1">
           <label
@@ -122,7 +134,8 @@ export function StepPersonalData({ profile, onChange }: Props) {
         </div>
         <div
           aria-live="polite"
-          className="flex h-[58px] min-w-[88px] flex-col items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-surface/50 px-4"
+          aria-label="Edad calculada"
+          className="flex h-[58px] min-w-[88px] flex-col items-center justify-center rounded-2xl border border-[var(--border-strong)] bg-surface/50 px-4 select-none"
         >
           <span className="font-display text-2xl font-bold leading-none text-foreground">
             {age ?? "—"}
@@ -133,16 +146,14 @@ export function StepPersonalData({ profile, onChange }: Props) {
         </div>
       </div>
 
-      {/* City */}
+      {/* City — predictive autocomplete */}
       <FieldLabel>Ciudad / País de origen</FieldLabel>
-      <input
-        type="text"
-        required
-        value={profile.city ?? ""}
-        onChange={(e) => onChange({ city: e.target.value })}
-        placeholder="Ciudad, País"
-        className={inputCx + " mb-6"}
-      />
+      <div className="mb-6">
+        <CityAutocomplete
+          value={profile.city ?? ""}
+          onChange={(val) => onChange({ city: val })}
+        />
+      </div>
 
       {/* Pronouns */}
       <FieldLabel optional>Pronombres</FieldLabel>

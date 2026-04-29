@@ -1,5 +1,6 @@
 "use client"
 
+import { Globe, Lock, Users, type LucideIcon } from "lucide-react"
 import type { AntovelProfile, Privacy } from "@/lib/types"
 
 type Props = {
@@ -9,19 +10,19 @@ type Props = {
 
 type Option = {
   id: Privacy
-  emoji: string
+  Icon: LucideIcon
   title: string
   description: string
-  /** CSS color used for active border + glow + accent. */
+  /** Active accent color used for border, glow and labels. */
   accent: string
-  /** Optional softer accent for the gradient surface. */
+  /** Softer accent for the gradient surface. */
   accentSoft: string
 }
 
 const OPTIONS: Option[] = [
   {
     id: "private",
-    emoji: "🔒",
+    Icon: Lock,
     title: "Privado",
     description: "Solo tú puedes ver tu cerebro y recuerdos.",
     accent: "#7C3AED",
@@ -29,7 +30,7 @@ const OPTIONS: Option[] = [
   },
   {
     id: "contacts",
-    emoji: "👥",
+    Icon: Users,
     title: "Contactos",
     description: "Solo las personas que apruebes pueden explorar tu legado.",
     accent: "#06B6D4",
@@ -37,7 +38,7 @@ const OPTIONS: Option[] = [
   },
   {
     id: "public",
-    emoji: "🌐",
+    Icon: Globe,
     title: "Público",
     description: "Tu cerebro es visible para cualquier usuario de Antovel.",
     accent: "#EC4899",
@@ -63,6 +64,7 @@ export function StepPrivacy({ profile, onChange }: Props) {
       <div className="flex flex-col gap-3">
         {OPTIONS.map((opt) => {
           const active = current === opt.id
+          const Icon = opt.Icon
           return (
             <button
               key={opt.id}
@@ -90,7 +92,7 @@ export function StepPrivacy({ profile, onChange }: Props) {
               <span
                 aria-hidden
                 className={[
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl transition-all",
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all",
                   active ? "" : "bg-surface/80",
                 ].join(" ")}
                 style={
@@ -102,7 +104,13 @@ export function StepPrivacy({ profile, onChange }: Props) {
                     : undefined
                 }
               >
-                {opt.emoji}
+                <Icon
+                  className="h-5 w-5"
+                  strokeWidth={1.7}
+                  style={{
+                    color: active ? opt.accent : "rgba(255,255,255,0.7)",
+                  }}
+                />
               </span>
               <span className="flex flex-1 flex-col">
                 <span
@@ -119,9 +127,7 @@ export function StepPrivacy({ profile, onChange }: Props) {
               {/* Radio indicator */}
               <span
                 aria-hidden
-                className={[
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                ].join(" ")}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all"
                 style={{
                   borderColor: active ? opt.accent : "rgba(255,255,255,0.18)",
                   background: active ? opt.accent : "transparent",

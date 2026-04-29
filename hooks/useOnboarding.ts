@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useState } from "react"
 import type { AntovelProfile, Privacy } from "@/lib/types"
 
-const STORAGE_KEY = "antovel_profile"
+/**
+ * Single source of truth for onboarding state.
+ * Final profile is persisted to localStorage under `antovel_user_data`
+ * (per spec) once the user activates their brain.
+ */
+const STORAGE_KEY = "antovel_user_data"
 export const TOTAL_STEPS = 4
 
 /** Compute integer age from an ISO yyyy-mm-dd birthdate. */
@@ -57,15 +62,13 @@ export function useOnboarding() {
     setHydrated(true)
   }, [])
 
+  /**
+   * Plain merge update — note: age is derived from birthDate inside
+   * StepPersonalData via an explicit useEffect (per spec) rather than
+   * here, to keep the field-level reactive logic close to the field.
+   */
   const update = useCallback((patch: Partial<AntovelProfile>) => {
-    setProfile((prev) => {
-      const merged = { ...prev, ...patch }
-      // Auto-derive age when birthDate changes
-      if (patch.birthDate !== undefined && patch.birthDate) {
-        merged.age = calculateAge(patch.birthDate)
-      }
-      return merged
-    })
+    setProfile((prev) => ({ ...prev, ...patch }))
   }, [])
 
   const next = useCallback(() => {

@@ -1,6 +1,16 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
+import {
+  Activity,
+  Brain,
+  Check,
+  Globe2,
+  Heart,
+  Palette,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react"
 import type { AntovelProfile, Purpose } from "@/lib/types"
 
 type Props = {
@@ -12,15 +22,17 @@ const MAX_SELECTIONS = 3
 
 const PURPOSES: {
   id: Purpose
-  emoji: string
+  Icon: LucideIcon
   label: string
+  /** Tinted ambient color for the icon chip. */
+  tone: string
 }[] = [
-  { id: "memories", emoji: "🧠", label: "Preservar mis recuerdos" },
-  { id: "share-family", emoji: "❤️", label: "Compartirlo con mi familia" },
-  { id: "leave-mark", emoji: "🌍", label: "Dejar huella en el mundo" },
-  { id: "wellness", emoji: "📊", label: "Monitorear mi bienestar" },
-  { id: "explore-history", emoji: "🎨", label: "Explorar mi historia" },
-  { id: "discover-patterns", emoji: "✨", label: "Descubrir patrones en mi vida" },
+  { id: "memories", Icon: Brain, label: "Preservar mis recuerdos", tone: "#7C3AED" },
+  { id: "share-family", Icon: Heart, label: "Compartirlo con mi familia", tone: "#EC4899" },
+  { id: "leave-mark", Icon: Globe2, label: "Dejar huella en el mundo", tone: "#06B6D4" },
+  { id: "wellness", Icon: Activity, label: "Monitorear mi bienestar", tone: "#10B981" },
+  { id: "explore-history", Icon: Palette, label: "Explorar mi historia", tone: "#F59E0B" },
+  { id: "discover-patterns", Icon: Sparkles, label: "Descubrir patrones", tone: "#A78BFA" },
 ]
 
 export function StepPurpose({ profile, onChange }: Props) {
@@ -55,49 +67,62 @@ export function StepPurpose({ profile, onChange }: Props) {
         {PURPOSES.map((p) => {
           const active = selected.includes(p.id)
           const disabled = !active && atMax
+          const Icon = p.Icon
           return (
-            <button
+            <motion.button
               key={p.id}
               type="button"
               onClick={() => toggle(p.id)}
               disabled={disabled}
               aria-pressed={active}
+              animate={{ scale: active ? 1.05 : 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 22 }}
+              whileTap={!disabled ? { scale: active ? 1.02 : 0.98 } : undefined}
               className={[
-                "group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-all",
+                "group relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-colors",
                 active
-                  ? "border-[var(--neural-violet)] bg-[rgba(124,58,237,0.15)] shadow-[0_0_24px_rgba(124,58,237,0.25)]"
+                  ? "border-[var(--neural-violet)] bg-[rgba(124,58,237,0.15)] shadow-[0_0_28px_rgba(124,58,237,0.3)]"
                   : "border-[#2a2a3a] bg-[#12121E] hover:border-foreground/25",
                 disabled && "cursor-not-allowed opacity-40",
               ].join(" ")}
             >
               <span
                 aria-hidden
-                className={[
-                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl transition-all",
-                  active
-                    ? "bg-[var(--neural-violet)]/25"
-                    : "bg-surface/80 group-hover:bg-surface",
-                ].join(" ")}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors"
+                style={{
+                  background: active ? `${p.tone}26` : "rgba(255,255,255,0.04)",
+                  boxShadow: active ? `0 0 16px ${p.tone}66` : undefined,
+                }}
               >
-                {p.emoji}
+                <Icon
+                  className="h-5 w-5"
+                  strokeWidth={1.7}
+                  style={{ color: active ? p.tone : "rgba(255,255,255,0.7)" }}
+                />
               </span>
-              <span className="flex-1 font-display text-[15px] font-semibold leading-snug text-foreground">
+              <span className="flex-1 pr-6 font-display text-[15px] font-semibold leading-snug text-foreground">
                 {p.label}
               </span>
 
-              {/* Checkmark — top-right corner per spec */}
-              <span
-                aria-hidden
-                className={[
-                  "absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full transition-all",
-                  active
-                    ? "bg-[var(--neural-violet)] opacity-100 scale-100"
-                    : "opacity-0 scale-50",
-                ].join(" ")}
-              >
-                <Check className="h-3 w-3 text-white" strokeWidth={3} />
-              </span>
-            </button>
+              {/* Spring checkmark — appears with stiff overshoot */}
+              <AnimatePresence>
+                {active && (
+                  <motion.span
+                    aria-hidden
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 18 }}
+                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--neural-violet)] shadow-[0_0_12px_rgba(124,58,237,0.7)]"
+                  >
+                    <Check
+                      className="h-3 w-3 text-white"
+                      strokeWidth={3}
+                    />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           )
         })}
       </div>
