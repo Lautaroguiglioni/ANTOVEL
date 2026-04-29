@@ -324,6 +324,69 @@
   will-change: transform;
 }
 
+/* ─────────────────────────────────────
+   Activation sequence (final CTA → /brain)
+   Total duration: 1.5s
+   Overlay fades in/out, logo pulses, halo blooms.
+   ───────────────────────────────────── */
+@keyframes activation-fade {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.animate-activation-fade {
+  animation: activation-fade 1.5s ease-in-out forwards;
+}
+
+@keyframes activation-pulse {
+  0% {
+    transform: scale(0.85);
+    filter: brightness(0.9);
+  }
+  35% {
+    transform: scale(1.08);
+    filter: brightness(1.4);
+  }
+  70% {
+    transform: scale(0.98);
+    filter: brightness(1.15);
+  }
+  100% {
+    transform: scale(1.02);
+    filter: brightness(1);
+  }
+}
+.animate-activation-pulse {
+  animation: activation-pulse 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes activation-glow {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.7);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+.animate-activation-glow {
+  animation: activation-glow 1.4s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float-x,
   .animate-float-y,
@@ -331,7 +394,9 @@
   .animate-halo-pulse-inner,
   .animate-neural-drift-1,
   .animate-neural-drift-2,
-  .animate-neural-drift-3 {
+  .animate-neural-drift-3,
+  .animate-activation-pulse,
+  .animate-activation-glow {
     animation: none;
   }
 }

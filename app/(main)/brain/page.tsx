@@ -6,6 +6,21 @@ import { loadProfile, clearProfile } from "@/hooks/useOnboarding"
 import { AntovelLogo } from "@/components/onboarding/AntovelLogo"
 import type { AntovelProfile } from "@/lib/types"
 
+const PRIVACY_LABEL: Record<AntovelProfile["privacy"], string> = {
+  private: "Privado",
+  contacts: "Contactos",
+  public: "Público",
+}
+
+const PURPOSE_LABEL: Record<string, string> = {
+  memories: "Preservar mis recuerdos",
+  "share-family": "Compartirlo con mi familia",
+  "leave-mark": "Dejar huella en el mundo",
+  wellness: "Monitorear mi bienestar",
+  "explore-history": "Explorar mi historia",
+  "discover-patterns": "Descubrir patrones en mi vida",
+}
+
 export default function BrainPage() {
   const [profile, setProfile] = useState<AntovelProfile | null>(null)
   const [hydrated, setHydrated] = useState(false)
@@ -50,18 +65,25 @@ export default function BrainPage() {
             </h2>
             <dl className="space-y-2 text-sm">
               <Row label="Nombre" value={profile.name} />
-              {profile.pronouns && (
-                <Row label="Pronombres" value={profile.pronouns} />
+              {profile.age != null && (
+                <Row label="Edad" value={`${profile.age} años`} />
               )}
               {profile.birthDate && (
                 <Row label="Nacimiento" value={profile.birthDate} />
               )}
-              {profile.birthPlace && (
-                <Row label="Lugar" value={profile.birthPlace} />
+              {profile.city && <Row label="Origen" value={profile.city} />}
+              {profile.pronouns && (
+                <Row label="Pronombres" value={profile.pronouns} />
               )}
-              {profile.intents.length > 0 && (
-                <Row label="Pilares" value={profile.intents.join(", ")} />
+              {profile.purposes.length > 0 && (
+                <Row
+                  label="Propósito"
+                  value={profile.purposes
+                    .map((p) => PURPOSE_LABEL[p] ?? p)
+                    .join(" · ")}
+                />
               )}
+              <Row label="Privacidad" value={PRIVACY_LABEL[profile.privacy]} />
             </dl>
           </div>
         )}
@@ -79,9 +101,9 @@ export default function BrainPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-display text-foreground">{value}</dd>
+    <div className="flex items-start justify-between gap-4">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="text-right font-display text-foreground">{value}</dd>
     </div>
   )
 }

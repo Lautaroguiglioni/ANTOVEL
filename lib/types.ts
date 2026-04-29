@@ -1,21 +1,30 @@
-// Shared TypeScript types for Antovel
+// Shared TypeScript types for Antovel — Phase 0 onboarding model.
 
-export type LegacyIntent =
+export type Purpose =
   | "memories"
-  | "health"
-  | "wisdom"
-  | "family"
-  | "creative"
+  | "share-family"
+  | "leave-mark"
+  | "wellness"
+  | "explore-history"
+  | "discover-patterns"
+
+export type Privacy = "private" | "contacts" | "public"
 
 export interface AntovelProfile {
-  // Identity
+  // Personal data
   name: string
-  pronouns?: string
-  // Origin
   birthDate?: string // ISO yyyy-mm-dd
-  birthPlace?: string
-  // Intent
-  intents: LegacyIntent[]
+  age?: number // derived from birthDate
+  city?: string
+  pronouns?: string
+  avatarUrl?: string // data URL (base64) when uploaded
+
+  // Purpose
+  purposes: Purpose[] // min 1, max 3
+
+  // Privacy
+  privacy: Privacy
+
   // Meta
   createdAt: string // ISO datetime
   onboardingCompleted: boolean

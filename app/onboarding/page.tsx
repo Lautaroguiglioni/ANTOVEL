@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ArrowRight, ChevronLeft } from "lucide-react"
 import { useOnboarding } from "@/hooks/useOnboarding"
@@ -11,9 +13,9 @@ import {
   PrimaryButton,
 } from "@/components/onboarding/PrimaryButton"
 import { StepWelcome } from "@/components/onboarding/StepWelcome"
-import { StepIdentity } from "@/components/onboarding/StepIdentity"
-import { StepOrigin } from "@/components/onboarding/StepOrigin"
-import { StepIntent } from "@/components/onboarding/StepIntent"
+import { StepPersonalData } from "@/components/onboarding/StepPersonalData"
+import { StepPurpose } from "@/components/onboarding/StepPurpose"
+import { StepPrivacy } from "@/components/onboarding/StepPrivacy"
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -29,26 +31,47 @@ export default function OnboardingPage() {
     totalSteps,
   } = useOnboarding()
 
+  const [activating, setActivating] = useState(false)
+
   if (!hydrated) {
     return <div className="min-h-dvh bg-background" aria-hidden />
   }
 
   const isLast = step === totalSteps - 1
+
+  // Per-step validation
   const canAdvance = (() => {
     if (step === 0) return true
-    if (step === 1) return (profile.name ?? "").trim().length >= 2
-    if (step === 2) return Boolean(profile.birthDate && profile.birthPlace)
-    if (step === 3) return (profile.intents ?? []).length > 0
+    if (step === 1) {
+      const nameOk = (profile.name ?? "").trim().length >= 2
+      const dateOk = Boolean(profile.birthDate)
+      const cityOk = Boolean((profile.city ?? "").trim())
+      return nameOk && dateOk && cityOk
+    }
+    if (step === 2) {
+      const count = (profile.purposes ?? []).length
+      return count >= 1 && count <= 3
+    }
+    if (step === 3) return Boolean(profile.privacy)
     return true
   })()
 
-  const ctaLabel = step === 0 ? "Comenzar" : isLast ? "Activar mi cerebro" : "Continuar"
+  const ctaLabel =
+    step === 0
+      ? "Comenzar mi Legado"
+      : isLast
+        ? "Activar mi Cerebro"
+        : "Continuar"
 
   const handleNext = () => {
-    if (!canAdvance) return
+    if (!canAdvance || activating) return
     if (isLast) {
       complete()
-      router.push("/brain")
+      // Activation animation: logo pulses 1.5s, then navigate.
+      setActivating(true)
+      window.setTimeout(() => {
+        router.push("/brain")
+      }, 1500)
       return
     }
     next()
@@ -73,16 +96,21 @@ export default function OnboardingPage() {
       <section className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
         <div key={step} className={animClass}>
           {step === 0 && <StepWelcome />}
-          {step === 1 && <StepIdentity profile={profile} onChange={update} />}
-          {step === 2 && <StepOrigin profile={profile} onChange={update} />}
-          {step === 3 && <StepIntent profile={profile} onChange={update} />}
+          {step === 1 && (
+            <StepPersonalData profile={profile} onChange={update} />
+          )}
+          {step === 2 && <StepPurpose profile={profile} onChange={update} />}
+          {step === 3 && <StepPrivacy profile={profile} onChange={update} />}
         </div>
       </section>
 
       {/* Bottom CTA */}
       <footer className="sticky bottom-0 px-6 pb-8 pt-4 sm:px-10 sm:pb-10">
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
-          <PrimaryButton onClick={handleNext} disabled={!canAdvance}>
+          <PrimaryButton
+            onClick={handleNext}
+            disabled={!canAdvance || activating}
+          >
             {ctaLabel}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </PrimaryButton>
@@ -100,6 +128,29 @@ export default function OnboardingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ─── Activation overlay (1.5s) ─────────────────────────────
+          1. logo fades in + pulses
+          2. fades out → navigation to /brain
+          ────────────────────────────────────────────────────────── */}
+      {activating && (
+        <div
+          aria-hidden
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-activation-fade"
+        >
+          <div className="relative flex h-56 w-56 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.55)_0%,rgba(6,182,212,0.18)_45%,transparent_70%)] blur-2xl animate-activation-glow" />
+            <Image
+              src="/antovel-logo.png"
+              alt=""
+              width={320}
+              height={320}
+              priority
+              className="relative h-44 w-44 object-contain mix-blend-screen drop-shadow-[0_0_36px_rgba(167,139,250,0.7)] animate-activation-pulse"
+            />
+          </div>
+        </div>
+      )}
     </main>
   )
 }

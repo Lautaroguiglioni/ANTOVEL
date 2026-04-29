@@ -1,10 +1,21 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import type { AntovelProfile } from "@/lib/types"
+import type { AntovelProfile, Privacy } from "@/lib/types"
 
 const STORAGE_KEY = "antovel_profile"
 export const TOTAL_STEPS = 4
+
+/** Compute integer age from an ISO yyyy-mm-dd birthdate. */
+export function calculateAge(isoDate: string): number {
+  const today = new Date()
+  const birth = new Date(isoDate)
+  if (Number.isNaN(birth.getTime())) return 0
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return Math.max(0, age)
+}
 
 export function loadProfile(): AntovelProfile | null {
   if (typeof window === "undefined") return null
@@ -27,11 +38,14 @@ export function clearProfile() {
   window.localStorage.removeItem(STORAGE_KEY)
 }
 
+const DEFAULT_PRIVACY: Privacy = "private"
+
 export function useOnboarding() {
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const [profile, setProfile] = useState<Partial<AntovelProfile>>({
-    intents: [],
+    purposes: [],
+    privacy: DEFAULT_PRIVACY,
   })
   const [hydrated, setHydrated] = useState(false)
 
@@ -44,7 +58,14 @@ export function useOnboarding() {
   }, [])
 
   const update = useCallback((patch: Partial<AntovelProfile>) => {
-    setProfile((prev) => ({ ...prev, ...patch }))
+    setProfile((prev) => {
+      const merged = { ...prev, ...patch }
+      // Auto-derive age when birthDate changes
+      if (patch.birthDate !== undefined && patch.birthDate) {
+        merged.age = calculateAge(patch.birthDate)
+      }
+      return merged
+    })
   }, [])
 
   const next = useCallback(() => {
@@ -62,8 +83,13 @@ export function useOnboarding() {
       name: profile.name?.trim() || "Anónimo",
       pronouns: profile.pronouns,
       birthDate: profile.birthDate,
-      birthPlace: profile.birthPlace,
-      intents: profile.intents ?? [],
+      age:
+        profile.age ??
+        (profile.birthDate ? calculateAge(profile.birthDate) : undefined),
+      city: profile.city,
+      avatarUrl: profile.avatarUrl,
+      purposes: profile.purposes ?? [],
+      privacy: profile.privacy ?? DEFAULT_PRIVACY,
       createdAt: new Date().toISOString(),
       onboardingCompleted: true,
     }
