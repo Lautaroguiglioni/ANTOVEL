@@ -1,0 +1,105 @@
+import * as THREE from "three"
+import type { Memory, MemoryType, Connection } from "@/lib/types"
+
+/* ─────────────────────────────────────
+   Memory type → semantic color
+   (used by both the 3D node material
+    and 2D UI accents — single source of
+    truth so they stay in sync).
+   ───────────────────────────────────── */
+export const MEMORY_TYPE_COLOR: Record<MemoryType, string> = {
+  photo: "#06B6D4", // cyan
+  audio: "#EC4899", // magenta
+  video: "#F59E0B", // amber
+  note: "#10B981", // emerald
+}
+
+export const MEMORY_TYPE_LABEL: Record<MemoryType, string> = {
+  photo: "Fotos",
+  audio: "Audios",
+  video: "Videos",
+  note: "Notas",
+}
+
+/**
+ * Distribute `count` points evenly across the surface of a sphere of `radius`
+ * using the golden-ratio Fibonacci algorithm (no clustering at the poles).
+ */
+export function fibonacciSphere(count: number, radius: number): THREE.Vector3[] {
+  const points: THREE.Vector3[] = []
+  const goldenRatio = (1 + Math.sqrt(5)) / 2
+  for (let i = 0; i < count; i++) {
+    // theta sweeps from 0..π (latitude); phi rotates with golden angle.
+    const theta = Math.acos(1 - (2 * (i + 0.5)) / count)
+    const phi = (2 * Math.PI * i) / goldenRatio
+    points.push(
+      new THREE.Vector3(
+        radius * Math.sin(theta) * Math.cos(phi),
+        radius * Math.sin(theta) * Math.sin(phi),
+        radius * Math.cos(theta),
+      ),
+    )
+  }
+  return points
+}
+
+/**
+ * Build cronological connections between memories.
+ * Rules:
+ *  - Connect each memory to its next 1 or 2 successors (max 3 connections per node).
+ *  - Only keep edges with daysDiff <= 30 (same month-ish).
+ */
+export function buildConnections(memories: Memory[]): Connection[] {
+  const sorted = [...memories].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  )
+  const connections: Connection[] = []
+  const DAY = 1000 * 60 * 60 * 24
+
+  for (let i = 0; i < sorted.length; i++) {
+    for (let j = i + 1; j < Math.min(i + 3, sorted.length); j++) {
+      const daysDiff = Math.abs(
+        (new Date(sorted[j].date).getTime() - new Date(sorted[i].date).getTime()) / DAY,
+      )
+      if (daysDiff <= 30) {
+        connections.push({ from: sorted[i].id, to: sorted[j].id, daysDiff })
+      }
+    }
+  }
+  return connections
+}
+
+/**
+ * Quadratic-bezier curve between two surface nodes, bowed slightly toward
+ * the brain center so the line drapes "around" the volume instead of cutting through.
+ */
+export function curveBetween(
+  a: THREE.Vector3,
+  b: THREE.Vector3,
+  bow = 0.5,
+): THREE.QuadraticBezierCurve3 {
+  const mid = a.clone().add(b).multiplyScalar(0.5)
+  // Push the control point toward the center of the sphere (the brain's geometric core).
+  const toward = mid.clone().multiplyScalar(-bow).add(mid)
+  return new THREE.QuadraticBezierCurve3(a, toward, b)
+}
+
+/**
+ * Edge color/opacity classification:
+ *  - same week (≤7d) → violet, stronger
+ *  - same month (≤30d) → cyan, softer
+ */
+export function classifyConnection(daysDiff: number): { color: string; opacity: number } {
+  if (daysDiff <= 7) return { color: "#7C3AED", opacity: 0.6 }
+  return { color: "#06B6D4", opacity: 0.4 }
+}
+
+/** Format a date like "12 de marzo, 2022" in es-AR. */
+export function formatMemoryDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
