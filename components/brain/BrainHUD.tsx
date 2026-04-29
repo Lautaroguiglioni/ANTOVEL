@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Mic, Film, FileText, Layers } from "lucide-react"
 import * as Slider from "@radix-ui/react-slider"
 import { MEMORY_TYPE_COLOR, MEMORY_TYPE_LABEL } from "@/lib/brain-logic"
+import { PredictiveSearch } from "./PredictiveSearch"
 import type { AntovelProfile, Memory, MemoryType } from "@/lib/types"
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
   onToggleType: (type: MemoryType | null) => void
   yearRange: [number, number]
   onYearRangeChange: (range: [number, number]) => void
+  onSearchSelect: (m: Memory) => void
   onClearStorage: () => void
 }
 
@@ -31,6 +33,7 @@ export function BrainHUD({
   onToggleType,
   yearRange,
   onYearRangeChange,
+  onSearchSelect,
   onClearStorage,
 }: Props) {
   const currentYear = new Date().getFullYear()
@@ -63,7 +66,7 @@ export function BrainHUD({
           {/* Logo */}
           <Link
             href="/"
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#12121E]/70 px-3 py-1.5 text-sm font-display tracking-wide text-foreground/90 backdrop-blur-md transition-colors hover:border-white/20"
+            className="pointer-events-auto inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-[#12121E]/70 px-3 py-1.5 text-sm font-display tracking-wide text-foreground/90 backdrop-blur-md transition-colors hover:border-white/20"
           >
             <Image
               src="/antovel-logo.png"
@@ -76,8 +79,13 @@ export function BrainHUD({
             Antovel
           </Link>
 
+          {/* Predictive search (hidden on small screens to keep header clean) */}
+          <div className="hidden flex-1 justify-center md:flex">
+            <PredictiveSearch memories={memories} onSelect={onSearchSelect} />
+          </div>
+
           {/* Year navigator */}
-          <div className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#12121E]/70 px-1.5 py-1 backdrop-blur-md">
+          <div className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-[#12121E]/70 px-1.5 py-1 backdrop-blur-md">
             <button
               onClick={() => stepFocalYear(-1)}
               disabled={focalYear <= minYear}
@@ -100,7 +108,7 @@ export function BrainHUD({
           </div>
 
           {/* User chip */}
-          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#12121E]/70 px-2 py-1 backdrop-blur-md">
+          <div className="pointer-events-auto inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-[#12121E]/70 px-2 py-1 backdrop-blur-md">
             {profile.avatarUrl ? (
               <Image
                 src={profile.avatarUrl || "/placeholder.svg"}
@@ -125,6 +133,11 @@ export function BrainHUD({
               Reiniciar
             </button>
           </div>
+        </div>
+
+        {/* Search on mobile (full-width row below the header chips) */}
+        <div className="mx-auto mt-3 flex max-w-6xl md:hidden">
+          <PredictiveSearch memories={memories} onSelect={onSearchSelect} />
         </div>
 
         {/* Counter */}
@@ -219,8 +232,6 @@ export function BrainHUD({
             )}
           </div>
         </div>
-        {/* unused memories count for ESLint awareness */}
-        <span className="hidden">{memories.length}</span>
       </div>
     </>
   )

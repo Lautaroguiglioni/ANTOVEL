@@ -9,10 +9,11 @@ interface Props {
   memories: Memory[]
   visibleTypes: Set<MemoryType>
   yearRange: [number, number]
+  focusedId: string | null
   onSelectMemory: (m: Memory) => void
 }
 
-export default function BrainCanvas({ memories, visibleTypes, yearRange, onSelectMemory }: Props) {
+export default function BrainCanvas({ memories, visibleTypes, yearRange, focusedId, onSelectMemory }: Props) {
   // OrbitControls.autoRotate is paused while the user is dragging.
   const [interacting, setInteracting] = useState(false)
 
@@ -28,6 +29,7 @@ export default function BrainCanvas({ memories, visibleTypes, yearRange, onSelec
           memories={memories}
           visibleTypes={visibleTypes}
           yearRange={yearRange}
+          focusedId={focusedId}
           onSelectMemory={onSelectMemory}
           onUserInteract={setInteracting}
           autoRotate={!interacting}

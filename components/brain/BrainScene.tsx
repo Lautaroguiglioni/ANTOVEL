@@ -1,12 +1,15 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useRef } from "react"
 import * as THREE from "three"
 import { OrbitControls } from "@react-three/drei"
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import { Hemispheres } from "./Hemispheres"
 import { MemoryNode } from "./MemoryNode"
 import { ConnectionLine } from "./ConnectionLine"
 import { AmbientParticles } from "./AmbientParticles"
+import { CameraDirector } from "./CameraDirector"
+import { CinematicDoF } from "./CinematicDoF"
 import { fibonacciSphere, buildConnections } from "@/lib/brain-logic"
 import type { Memory, MemoryType } from "@/lib/types"
 
@@ -14,6 +17,7 @@ interface Props {
   memories: Memory[]
   visibleTypes: Set<MemoryType>
   yearRange: [number, number]
+  focusedId: string | null
   onSelectMemory: (m: Memory) => void
   onUserInteract: (interacting: boolean) => void
   autoRotate: boolean
@@ -23,10 +27,13 @@ export function BrainScene({
   memories,
   visibleTypes,
   yearRange,
+  focusedId,
   onSelectMemory,
   onUserInteract,
   autoRotate,
 }: Props) {
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
+
   // Stable per-memory placement on the brain "scalp" using Fibonacci.
   // Recomputed only when the memory set changes (not when filters change).
   const positions = useMemo(() => {
@@ -58,6 +65,10 @@ export function BrainScene({
   }, [memories, yearRange, visibleTypes])
 
   const connections = useMemo(() => buildConnections(memories), [memories])
+
+  // World position of the focused node (drives the cinematic camera).
+  const focusPosition = focusedId ? positions.get(focusedId) ?? null : null
+  const focused = !!focusPosition
 
   return (
     <>
@@ -112,16 +123,23 @@ export function BrainScene({
 
       {/* ─── Camera ─── */}
       <OrbitControls
+        ref={controlsRef}
         enablePan={false}
         minDistance={4}
         maxDistance={12}
-        autoRotate={autoRotate}
+        autoRotate={autoRotate && !focused}
         autoRotateSpeed={0.4}
         enableDamping
         dampingFactor={0.08}
         onStart={() => onUserInteract(true)}
         onEnd={() => onUserInteract(false)}
       />
+
+      {/* ─── Cinematic camera director (drives focus zoom) ─── */}
+      <CameraDirector focusPosition={focusPosition} controlsRef={controlsRef} />
+
+      {/* ─── Aggressive Depth-of-Field that blooms when focused ─── */}
+      <CinematicDoF focused={focused} />
     </>
   )
 }

@@ -8,7 +8,7 @@ import { mockMemories } from "@/lib/mock-data"
 import { buildConnections } from "@/lib/brain-logic"
 import type { AntovelProfile, Memory, MemoryType } from "@/lib/types"
 import { BrainHUD } from "@/components/brain/BrainHUD"
-import { MemoryModal } from "@/components/brain/MemoryModal"
+import { MemoryCapsule } from "@/components/brain/MemoryCapsule"
 
 // R3F needs WebGL, so the canvas can only render on the client.
 const BrainCanvas = dynamic(() => import("@/components/brain/BrainCanvas"), {
@@ -49,6 +49,16 @@ export default function BrainPage() {
     }
     setHydrated(true)
   }, [router])
+
+  // Allow Esc to close the capsule and return to the map.
+  useEffect(() => {
+    if (!selected) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [selected])
 
   const memories = useMemo(() => mockMemories, [])
   const allConnections = useMemo(() => buildConnections(memories), [memories])
@@ -93,6 +103,19 @@ export default function BrainPage() {
     })
   }
 
+  // When the user picks a result from the predictive search, ensure the
+  // memory is actually visible (year range + type) before zooming in.
+  const handleSearchSelect = (m: Memory) => {
+    const year = new Date(m.date).getFullYear()
+    if (year < yearRange[0] || year > yearRange[1]) {
+      setYearRange([Math.min(yearRange[0], year), Math.max(yearRange[1], year)])
+    }
+    if (!visibleTypes.has(m.type)) {
+      setVisibleTypes((prev) => new Set(prev).add(m.type))
+    }
+    setSelected(m)
+  }
+
   if (!hydrated || !profile) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-background">
@@ -119,6 +142,7 @@ export default function BrainPage() {
           memories={memories}
           visibleTypes={visibleTypes}
           yearRange={yearRange}
+          focusedId={selected?.id ?? null}
           onSelectMemory={setSelected}
         />
       </div>
@@ -133,14 +157,15 @@ export default function BrainPage() {
         onToggleType={handleToggleType}
         yearRange={yearRange}
         onYearRangeChange={setYearRange}
+        onSearchSelect={handleSearchSelect}
         onClearStorage={() => {
           clearProfile()
           router.replace("/onboarding")
         }}
       />
 
-      {/* Memory detail */}
-      <MemoryModal
+      {/* Immersive Memory Capsule (rises after the camera settles inside the node) */}
+      <MemoryCapsule
         memory={selected}
         related={relatedMemories}
         onClose={() => setSelected(null)}
