@@ -213,20 +213,38 @@
 }
 
 /* ─────────────────────────────────────
-   Onboarding logo: gentle Y float
-   (sinusoidal ±5px @ ~0.2Hz = 5s loop)
+   Onboarding logo: multi-harmonic float
+   X and Y are decoupled into separate wrappers
+   with mismatched periods (5s vs 7s), producing
+   a Lissajous-like, non-repeating motion that
+   feels organic — like an organism breathing
+   in the void.
    ───────────────────────────────────── */
 @keyframes float-y {
   0%,
   100% {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
   50% {
-    transform: translateY(5px);
+    transform: translateY(6px);
   }
 }
 .animate-float-y {
   animation: float-y 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes float-x {
+  0%,
+  100% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+.animate-float-x {
+  animation: float-x 7s ease-in-out infinite;
   will-change: transform;
 }
 
@@ -260,56 +278,54 @@
 
 /* ─────────────────────────────────────
    Cinematic neural background — parallax
-   Three layers, each drifts in a different
-   direction at a different speed (loop ∞).
+   Layers drift in OPPOSING directions at
+   different speeds. Near layer (1) drifts
+   up-left; mid layer (2) drifts in the
+   opposite direction (down-right); far
+   layer (3) crosses diagonally (up-right)
+   to break symmetry. Long, near-linear
+   easing creates a slow cinematic flow
+   instead of a "swing".
    ───────────────────────────────────── */
 @keyframes neural-drift-1 {
   0% {
-    transform: translate(0%, 0%) scale(1.05);
-  }
-  50% {
-    transform: translate(-3%, -2%) scale(1.08);
+    transform: translate3d(2.5%, 2%, 0) scale(1.06);
   }
   100% {
-    transform: translate(0%, 0%) scale(1.05);
+    transform: translate3d(-2.5%, -2%, 0) scale(1.06);
   }
 }
 @keyframes neural-drift-2 {
   0% {
-    transform: translate(0%, 0%) scale(1.05);
-  }
-  50% {
-    transform: translate(3%, 2.5%) scale(1.1);
+    transform: translate3d(-3%, -2.5%, 0) scale(1.08);
   }
   100% {
-    transform: translate(0%, 0%) scale(1.05);
+    transform: translate3d(3%, 2.5%, 0) scale(1.08);
   }
 }
 @keyframes neural-drift-3 {
   0% {
-    transform: translate(0%, 0%) scale(1.1);
-  }
-  50% {
-    transform: translate(-2.5%, 2.5%) scale(1.14);
+    transform: translate3d(-2%, 2.5%, 0) scale(1.12);
   }
   100% {
-    transform: translate(0%, 0%) scale(1.1);
+    transform: translate3d(2%, -2.5%, 0) scale(1.12);
   }
 }
 .animate-neural-drift-1 {
-  animation: neural-drift-1 28s ease-in-out infinite;
+  animation: neural-drift-1 36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
   will-change: transform;
 }
 .animate-neural-drift-2 {
-  animation: neural-drift-2 44s ease-in-out infinite;
+  animation: neural-drift-2 56s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
   will-change: transform;
 }
 .animate-neural-drift-3 {
-  animation: neural-drift-3 68s ease-in-out infinite;
+  animation: neural-drift-3 84s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-float-x,
   .animate-float-y,
   .animate-halo-pulse,
   .animate-halo-pulse-inner,
