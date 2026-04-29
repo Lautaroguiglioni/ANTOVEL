@@ -85,12 +85,12 @@ export function BrainScene({
   return (
     <>
       {/* ─── Lighting (4-point + hemi GI fill) ─── */}
-      <ambientLight intensity={0.15} color="#0a0020" />
+      <ambientLight intensity={0.4} color="#2a1050" />
       <pointLight position={[-6, 10, 4]} intensity={3.5} color="#7C3AED" />
       <pointLight position={[8, -5, 3]} intensity={2.0} color="#06B6D4" />
       <pointLight position={[0, 0, 6]} intensity={1.0} color="#EC4899" distance={8} />
       <pointLight position={[0, -8, -2]} intensity={1.5} color="#3d0070" />
-      <hemisphereLight args={["#1a0533", "#000000", 0.4]} />
+      <hemisphereLight args={["#3a1170", "#000000", 0.6]} />
 
       {/* ─── Capa 2: Cerebro orgánico PBR ─── */}
       <OrganicBrain segments={quality.brainSegments} />
