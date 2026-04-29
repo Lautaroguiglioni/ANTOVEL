@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, ChevronLeft } from "lucide-react"
 import { useOnboarding } from "@/hooks/useOnboarding"
 import { AntovelLogo } from "@/components/onboarding/AntovelLogo"
+import { NeuralBackground } from "@/components/onboarding/NeuralBackground"
 import { ProgressDots } from "@/components/onboarding/ProgressDots"
 import {
   GhostButton,
@@ -59,7 +60,9 @@ export default function OnboardingPage() {
       : "animate-slide-in-left"
 
   return (
-    <main className="bg-neural-nebula bg-dot-grid relative flex min-h-dvh flex-col bg-background">
+    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
+      <NeuralBackground />
+
       {/* Header: logo + dots */}
       <header className="flex items-center justify-between px-6 pt-8 sm:px-10">
         <AntovelLogo />

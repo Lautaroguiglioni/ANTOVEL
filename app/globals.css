@@ -211,3 +211,111 @@
 .animate-neural-pulse {
   animation: neural-pulse 2.4s ease-in-out infinite;
 }
+
+/* ─────────────────────────────────────
+   Onboarding logo: gentle Y float
+   (sinusoidal ±5px @ ~0.2Hz = 5s loop)
+   ───────────────────────────────────── */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+.animate-float-y {
+  animation: float-y 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Bioluminescent halo: opacity 0.1 -> 0.4 */
+@keyframes halo-pulse {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.05);
+  }
+}
+.animate-halo-pulse {
+  animation: halo-pulse 6s ease-in-out infinite;
+}
+@keyframes halo-pulse-inner {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.animate-halo-pulse-inner {
+  animation: halo-pulse-inner 4s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────
+   Cinematic neural background — parallax
+   Three layers, each drifts in a different
+   direction at a different speed (loop ∞).
+   ───────────────────────────────────── */
+@keyframes neural-drift-1 {
+  0% {
+    transform: translate(0%, 0%) scale(1.05);
+  }
+  50% {
+    transform: translate(-3%, -2%) scale(1.08);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1.05);
+  }
+}
+@keyframes neural-drift-2 {
+  0% {
+    transform: translate(0%, 0%) scale(1.05);
+  }
+  50% {
+    transform: translate(3%, 2.5%) scale(1.1);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1.05);
+  }
+}
+@keyframes neural-drift-3 {
+  0% {
+    transform: translate(0%, 0%) scale(1.1);
+  }
+  50% {
+    transform: translate(-2.5%, 2.5%) scale(1.14);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1.1);
+  }
+}
+.animate-neural-drift-1 {
+  animation: neural-drift-1 28s ease-in-out infinite;
+  will-change: transform;
+}
+.animate-neural-drift-2 {
+  animation: neural-drift-2 44s ease-in-out infinite;
+  will-change: transform;
+}
+.animate-neural-drift-3 {
+  animation: neural-drift-3 68s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-y,
+  .animate-halo-pulse,
+  .animate-halo-pulse-inner,
+  .animate-neural-drift-1,
+  .animate-neural-drift-2,
+  .animate-neural-drift-3 {
+    animation: none;
+  }
+}
