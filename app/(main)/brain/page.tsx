@@ -8,6 +8,7 @@ import { mockMemories } from "@/lib/mock-data"
 import { buildConnections } from "@/lib/brain-logic"
 import type { AntovelProfile, Memory, MemoryType } from "@/lib/types"
 import { BrainHUD } from "@/components/brain/BrainHUD"
+import { GeoPanel } from "@/components/brain/GeoPanel"
 import { MemoryCapsule } from "@/components/brain/MemoryCapsule"
 
 // R3F needs WebGL, so the canvas can only render on the client.
@@ -27,6 +28,7 @@ export default function BrainPage() {
   const [profile, setProfile] = useState<AntovelProfile | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [selected, setSelected] = useState<Memory | null>(null)
+  const [activeLocation, setActiveLocation] = useState<string | null>(null)
   const [visibleTypes, setVisibleTypes] = useState<Set<MemoryType>>(new Set(ALL_TYPES))
   const [yearRange, setYearRange] = useState<[number, number]>(() => {
     const cy = new Date().getFullYear()
@@ -40,8 +42,6 @@ export default function BrainPage() {
       return
     }
     setProfile(p)
-
-    // Initialize year range from birthDate when available.
     if (p.birthDate) {
       const birthYear = new Date(p.birthDate).getFullYear()
       const cy = new Date().getFullYear()
@@ -50,7 +50,7 @@ export default function BrainPage() {
     setHydrated(true)
   }, [router])
 
-  // Allow Esc to close the capsule and return to the map.
+  // Esc closes the capsule and returns to the map.
   useEffect(() => {
     if (!selected) return
     const onKey = (e: KeyboardEvent) => {
@@ -66,9 +66,12 @@ export default function BrainPage() {
   const visibleMemories = useMemo(() => {
     return memories.filter((m) => {
       const y = new Date(m.date).getFullYear()
-      return y >= yearRange[0] && y <= yearRange[1] && visibleTypes.has(m.type)
+      const passesFilter = y >= yearRange[0] && y <= yearRange[1] && visibleTypes.has(m.type)
+      if (!passesFilter) return false
+      if (activeLocation) return m.location?.name === activeLocation
+      return true
     })
-  }, [memories, yearRange, visibleTypes])
+  }, [memories, yearRange, visibleTypes, activeLocation])
 
   const visibleConnectionsCount = useMemo(() => {
     const visIds = new Set(visibleMemories.map((m) => m.id))
@@ -87,14 +90,13 @@ export default function BrainPage() {
 
   const handleToggleType = (type: MemoryType | null) => {
     if (type === null) {
-      // "Todos" toggles between all-on and only-photo
       setVisibleTypes(visibleTypes.size === 4 ? new Set(["photo"]) : new Set(ALL_TYPES))
       return
     }
     setVisibleTypes((prev) => {
       const next = new Set(prev)
       if (next.has(type)) {
-        if (next.size === 1) return next // never empty — keep at least one
+        if (next.size === 1) return next
         next.delete(type)
       } else {
         next.add(type)
@@ -103,8 +105,8 @@ export default function BrainPage() {
     })
   }
 
-  // When the user picks a result from the predictive search, ensure the
-  // memory is actually visible (year range + type) before zooming in.
+  // Predictive search → ensure the picked memory is visible (year + type +
+  // clear any geo filter that would hide it) before zooming in.
   const handleSearchSelect = (m: Memory) => {
     const year = new Date(m.date).getFullYear()
     if (year < yearRange[0] || year > yearRange[1]) {
@@ -112,6 +114,9 @@ export default function BrainPage() {
     }
     if (!visibleTypes.has(m.type)) {
       setVisibleTypes((prev) => new Set(prev).add(m.type))
+    }
+    if (activeLocation && m.location?.name !== activeLocation) {
+      setActiveLocation(null)
     }
     setSelected(m)
   }
@@ -142,12 +147,13 @@ export default function BrainPage() {
           memories={memories}
           visibleTypes={visibleTypes}
           yearRange={yearRange}
+          activeLocationName={activeLocation}
           focusedId={selected?.id ?? null}
           onSelectMemory={setSelected}
         />
       </div>
 
-      {/* Floating UI */}
+      {/* Floating UI (header + filters + timeline + counter — preserved) */}
       <BrainHUD
         profile={profile}
         memories={memories}
@@ -164,7 +170,14 @@ export default function BrainPage() {
         }}
       />
 
-      {/* Immersive Memory Capsule (rises after the camera settles inside the node) */}
+      {/* Geo panel (bottom-left, syncs with the 3D brain) */}
+      <GeoPanel
+        memories={memories}
+        activeLocation={activeLocation}
+        onLocationSelect={(loc) => setActiveLocation(loc?.name ?? null)}
+      />
+
+      {/* Immersive memory capsule */}
       <MemoryCapsule
         memory={selected}
         related={relatedMemories}
