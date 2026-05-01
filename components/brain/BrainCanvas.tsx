@@ -13,6 +13,12 @@ interface Props {
   activeLocationName: string | null
   focusedId: string | null
   onSelectMemory: (m: Memory) => void
+  /**
+   * When true, the render loop stops (frameloop="never").
+   * Use this to keep the WebGL context alive across route changes
+   * without consuming CPU/GPU.
+   */
+  paused?: boolean
 }
 
 export default function BrainCanvas({
@@ -22,6 +28,7 @@ export default function BrainCanvas({
   activeLocationName,
   focusedId,
   onSelectMemory,
+  paused = false,
 }: Props) {
   const quality = useDeviceQuality()
   // OrbitControls.autoRotate is paused while the user is dragging.
@@ -29,6 +36,7 @@ export default function BrainCanvas({
 
   return (
     <Canvas
+      frameloop={paused ? "never" : "always"}
       dpr={quality.dpr}
       camera={{ position: [0, 0, 7], fov: 45 }}
       gl={{

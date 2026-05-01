@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Syne, DM_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { MobileLayout } from "@/components/layout/MobileLayout"
 
 const syne = Syne({
   subsets: ["latin"],
@@ -40,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${syne.variable} ${dmSans.variable} bg-background`}>
       <body className="font-sans antialiased text-foreground">
-        {children}
+        <MobileLayout>{children}</MobileLayout>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
