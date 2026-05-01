@@ -65,3 +65,30 @@ export interface Connection {
   to: string // memory id
   daysDiff: number
 }
+
+/* ─────────────────────────────────────
+   Phase 2 — Health & Avatar
+   ───────────────────────────────────── */
+
+export type HealthState = "radiant" | "good" | "regular" | "exhausted"
+
+export interface HealthMetrics {
+  steps: number
+  stepsGoal: number
+  sleepHours: number
+  sleepMinutes: number
+  sleepQuality: "optimal" | "good" | "poor"
+  heartRate: number
+  heartRateZone: "rest" | "light" | "moderate" | "intense"
+  stressLevel: number // 0–100
+  lastStressUpdate: string // ISO datetime
+  // Historical data for mini-charts
+  sleepHistory: number[] // last 7 days in hours
+  heartRateHistory: number[] // last 7 readings
+}
+
+export interface HealthData extends HealthMetrics {
+  healthScore: number // 0–100
+  state: HealthState
+  stepsTrend: number // % vs yesterday (can be negative)
+}
