@@ -92,3 +92,94 @@ export interface HealthData extends HealthMetrics {
   state: HealthState
   stepsTrend: number // % vs yesterday (can be negative)
 }
+
+/* ─────────────────────────────────────
+   Alzheimer module — additive extensions
+   (do NOT remove or rename existing fields)
+   ───────────────────────────────────── */
+
+export type AntovelRole =
+  | "owner"
+  | "family_member"
+  | "caregiver"
+  | "caregiver_secondary"
+
+export type AppMode =
+  | "personal"
+  | "alzheimer_patient"
+  | "alzheimer_family"
+  | "alzheimer_caregiver"
+
+export interface AlzheimerConfig {
+  patientName: string
+  patientId: string
+  myRole: AntovelRole
+  diagnosisYear?: number
+  primaryContactName: string
+  primaryContactPhone: string
+}
+
+/** Optional Alzheimer fields layered on top of AntovelProfile. */
+export interface AntovelProfileExtended extends AntovelProfile {
+  appMode?: AppMode
+  alzheimerConfig?: AlzheimerConfig
+}
+
+export type TherapeuticTag =
+  | "identity"
+  | "family_bond"
+  | "happy_place"
+  | "life_milestone"
+  | "daily_anchor"
+  | "sensory"
+
+export type MemorySource = "self" | "family" | "caregiver" | "ai_extracted"
+export type InjectionStatus = "pending" | "approved" | "active"
+
+/** Memory with optional Alzheimer/donation metadata layered on top. */
+export interface MemoryExtended extends Memory {
+  source?: MemorySource
+  injectionStatus?: InjectionStatus
+  donorName?: string
+  donorRelation?: string
+  injectionNote?: string
+  therapeuticTag?: TherapeuticTag
+  isFamilyDonation?: boolean
+}
+
+export interface EssencePerson {
+  name: string
+  relation: string
+  description: string
+  avatarColor: string
+}
+
+export interface EssenceLifelineEvent {
+  year: number
+  event: string
+  linkedMemoryId?: string
+}
+
+export interface EssencePrompt {
+  prompt: string
+  linkedMemoryId: string
+  therapeuticGoal: string
+}
+
+export interface EssenceEmergencyContact {
+  name: string
+  phone: string
+  relation: string
+}
+
+export interface EssenceDocument {
+  patientName: string
+  identityAffirmation: string
+  keyPeople: EssencePerson[]
+  lifeline: EssenceLifelineEvent[]
+  dailyAnchors: string[]
+  reminiscencePrompts: EssencePrompt[]
+  emergencyContact: EssenceEmergencyContact
+  lastUpdatedBy: string
+  lastUpdatedAt: string
+}
