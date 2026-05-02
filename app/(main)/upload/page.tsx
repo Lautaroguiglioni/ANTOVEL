@@ -43,7 +43,7 @@ export default function UploadPage() {
   const Icon = TYPE_ICONS[type]
 
   return (
-    <main className="relative h-full w-full overflow-y-auto pb-28">
+    <main className="relative w-full">
       <div className="px-5 pt-8">
         <div className="mb-6">
           <p className="text-[11px] uppercase tracking-[0.2em] text-white/50">

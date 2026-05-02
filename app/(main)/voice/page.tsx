@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Phone } from "lucide-react"
 import { VoiceAssistant } from "@/components/alzheimer/VoiceAssistant"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 import { mockEssence, mockDonations } from "@/lib/alzheimer/mock-alzheimer-data"
 
 /**
@@ -32,14 +32,7 @@ export default function VoicePage() {
             Esencia
           </Link>
           <div className="flex items-center gap-2">
-            <Image
-              src="/antovel-logo.png"
-              alt="Antovel"
-              width={28}
-              height={28}
-              className="size-7 object-contain"
-              style={{ mixBlendMode: "screen" }}
-            />
+            <LogoAntovel size={28} decorative />
             <span className="font-serif text-lg tracking-wider text-white">Voz</span>
           </div>
         </div>

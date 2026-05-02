@@ -34,7 +34,7 @@ export function PersistentBrainScene() {
   return (
     <div
       aria-hidden={!isBrainRoute}
-      className="pointer-events-none absolute inset-0 z-0"
+      className="pointer-events-none fixed inset-0 z-0"
       style={{
         // visibility hides the canvas without unmounting it (preserves WebGL)
         visibility: isBrainRoute ? "visible" : "hidden",

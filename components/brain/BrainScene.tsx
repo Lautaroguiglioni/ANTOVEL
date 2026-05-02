@@ -10,7 +10,12 @@ import { ConnectionLine } from "./ConnectionLine"
 import { SynapticParticles } from "./SynapticParticles"
 import { CinematicCamera } from "./CinematicCamera"
 import { PostFX } from "./PostFX"
-import { fibonacciSphere, buildConnections } from "@/lib/brain-logic"
+import {
+  fibonacciSphere,
+  buildConnections,
+  getTargetPosition,
+  type BrainMode,
+} from "@/lib/brain-logic"
 import type { Memory, MemoryType } from "@/lib/types"
 import type { QualityConfig } from "@/hooks/useDeviceQuality"
 
@@ -21,6 +26,8 @@ interface Props {
   /** When set, tokens of that location are boosted; everything else dims to ~18% */
   activeLocationName: string | null
   focusedId: string | null
+  /** cluster | time | map | people — drives morph target positions */
+  brainMode: BrainMode
   onSelectMemory: (m: Memory) => void
   onUserInteract: (interacting: boolean) => void
   autoRotate: boolean
@@ -33,6 +40,7 @@ export function BrainScene({
   yearRange,
   activeLocationName,
   focusedId,
+  brainMode,
   onSelectMemory,
   onUserInteract,
   autoRotate,
@@ -40,14 +48,29 @@ export function BrainScene({
 }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
-  // Stable per-memory placement on the brain "scalp" using Fibonacci.
-  // Recomputed only when the memory set changes (not on every filter change).
-  const positions = useMemo(() => {
+  // Stable per-memory placement on the brain "scalp" (cluster mode).
+  const clusterPositions = useMemo(() => {
     const pts = fibonacciSphere(memories.length, 2.55)
     const map = new Map<string, THREE.Vector3>()
     memories.forEach((m, i) => map.set(m.id, pts[i]))
     return map
   }, [memories])
+
+  /**
+   * Target positions per memory in the active mode.
+   * Cluster mode reuses the stable Fibonacci layout above; the other modes
+   * derive their target from the helpers in brain-logic. The Map is rebuilt
+   * only when memories or mode change — not on filter changes — so the
+   * morph animation runs with stable destinations.
+   */
+  const targetPositions = useMemo(() => {
+    const map = new Map<string, THREE.Vector3>()
+    memories.forEach((m) => {
+      const fallback = clusterPositions.get(m.id) ?? new THREE.Vector3()
+      map.set(m.id, getTargetPosition(m, memories, brainMode, fallback))
+    })
+    return map
+  }, [memories, brainMode, clusterPositions])
 
   /**
    * Per-memory state combines two filters:
@@ -78,8 +101,17 @@ export function BrainScene({
 
   const connections = useMemo(() => buildConnections(memories), [memories])
 
+  // Connections only make spatial sense in cluster mode (Fibonacci surface).
+  // In time/map/people the nodes have rearranged, so chronological lines
+  // would just clutter — we hide them.
+  const showConnections = brainMode === "cluster"
+
+  // Hide the organic brain shell when nodes leave the scalp surface.
+  const showBrainShell = brainMode === "cluster"
+
   // World position of the focused node (drives the cinematic camera).
-  const focusPosition = focusedId ? (positions.get(focusedId) ?? null) : null
+  // Uses the target position so the camera follows nodes during morph.
+  const focusPosition = focusedId ? (targetPositions.get(focusedId) ?? null) : null
   const focused = !!focusPosition
 
   return (
@@ -92,34 +124,36 @@ export function BrainScene({
       <pointLight position={[0, -8, -2]} intensity={1.5} color="#3d0070" />
       <hemisphereLight args={["#3a1170", "#000000", 0.6]} />
 
-      {/* ─── Capa 2: Cerebro orgánico PBR ─── */}
-      <OrganicBrain segments={quality.brainSegments} />
+      {/* ─── Capa 2: Cerebro orgánico PBR (sólo en modo cluster) ─── */}
+      <group visible={showBrainShell}>
+        <OrganicBrain segments={quality.brainSegments} />
+      </group>
 
-      {/* ─── Capa 3: Conexiones cronológicas (drawn before tokens) ─── */}
-      {connections.map((c, i) => {
-        const a = positions.get(c.from)
-        const b = positions.get(c.to)
-        if (!a || !b) return null
-        const sa = nodeStates.get(c.from)
-        const sb = nodeStates.get(c.to)
-        if (!sa || !sb) return null
-        // Connections fade with the dimmer of the two endpoints.
-        const visibility = Math.min(sa.visibility, sb.visibility)
-        return (
-          <ConnectionLine
-            key={`${c.from}-${c.to}-${i}`}
-            from={a}
-            to={b}
-            daysDiff={c.daysDiff}
-            visibility={visibility}
-            seed={(i % 10) / 10}
-          />
-        )
-      })}
+      {/* ─── Capa 3: Conexiones cronológicas (sólo en modo cluster) ─── */}
+      {showConnections &&
+        connections.map((c, i) => {
+          const a = clusterPositions.get(c.from)
+          const b = clusterPositions.get(c.to)
+          if (!a || !b) return null
+          const sa = nodeStates.get(c.from)
+          const sb = nodeStates.get(c.to)
+          if (!sa || !sb) return null
+          const visibility = Math.min(sa.visibility, sb.visibility)
+          return (
+            <ConnectionLine
+              key={`${c.from}-${c.to}-${i}`}
+              from={a}
+              to={b}
+              daysDiff={c.daysDiff}
+              visibility={visibility}
+              seed={(i % 10) / 10}
+            />
+          )
+        })}
 
-      {/* ─── Capa 4: Memory Tokens cristalinos ─── */}
+      {/* ─── Capa 4: Memory Tokens cristalinos con morfosis ─── */}
       {memories.map((m) => {
-        const pos = positions.get(m.id)
+        const pos = targetPositions.get(m.id)
         const state = nodeStates.get(m.id)
         if (!pos || !state) return null
         return (

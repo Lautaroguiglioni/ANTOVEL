@@ -8,6 +8,12 @@ import type { Memory } from "@/lib/types"
 
 interface Props {
   memory: Memory
+  /**
+   * The TARGET world position the token should morph toward. The token
+   * keeps an internal Vector3 it lerps toward this each frame, so when
+   * the brain mode changes (cluster → time → map → people) the node
+   * smoothly travels across instead of teleporting.
+   */
   position: THREE.Vector3
   /** 0..1 — visibility multiplier from year/type filters and geo dim. */
   visibility: number
@@ -54,7 +60,6 @@ function PhotoThumbnail({ memory }: { memory: Memory }) {
     c.height = H
     const ctx = c.getContext("2d")!
 
-    // Diagonal gradient seeded by memory color → recognizable but unique.
     const base = new THREE.Color(memory.color)
     const dark = base.clone().multiplyScalar(0.35)
     const light = base.clone().multiplyScalar(1.4)
@@ -64,7 +69,6 @@ function PhotoThumbnail({ memory }: { memory: Memory }) {
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, W, H)
 
-    // 3 abstract horizon bands (pseudo landscape).
     for (let i = 0; i < 3; i++) {
       const y = H * (0.4 + rnd() * 0.5)
       ctx.beginPath()
@@ -79,7 +83,6 @@ function PhotoThumbnail({ memory }: { memory: Memory }) {
       ctx.fill()
     }
 
-    // Soft glow disc (sun/highlight).
     const cx = W * (0.2 + rnd() * 0.6)
     const cy = H * (0.15 + rnd() * 0.25)
     const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22)
@@ -125,12 +128,10 @@ function AudioWaveform({ color, seed }: { color: string; seed: number }) {
 function VideoPreview({ color }: { color: string }) {
   return (
     <group>
-      {/* Dark plate */}
       <mesh>
         <planeGeometry args={[0.2, 0.14]} />
         <meshBasicMaterial color="#080814" transparent opacity={0.85} toneMapped={false} />
       </mesh>
-      {/* Play triangle (cone with 3 segments, rotated to point right) */}
       <mesh position={[0, 0, 0.005]} rotation={[0, 0, -Math.PI / 2]}>
         <coneGeometry args={[0.04, 0.06, 3]} />
         <meshBasicMaterial color={color} transparent opacity={0.95} toneMapped={false} />
@@ -175,30 +176,51 @@ function MemoryThumbnail({ memory }: { memory: Memory }) {
 /* ──────────────────────────────────────────
    The MemoryToken: an octahedral crystal that
    refracts light, levitates with a unique offset
-   per id, and contains a holographic thumbnail.
+   per id, AND morphs smoothly toward a target
+   world position when the brain mode changes.
    ────────────────────────────────────────── */
-export function MemoryToken({ memory, position, visibility, isHighlighted, detail = 1, onSelect }: Props) {
+export function MemoryToken({
+  memory,
+  position,
+  visibility,
+  isHighlighted,
+  detail = 1,
+  onSelect,
+}: Props) {
   const groupRef = useRef<THREE.Group>(null)
   const innerRef = useRef<THREE.Mesh>(null)
   const haloRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
 
+  // Internal current position — initialized from the first target so the
+  // node starts in place on mount, then lerps toward future target updates.
+  const currentPos = useRef(position.clone())
+
   const offset = useMemo(() => hashId(memory.id) % 1000, [memory.id])
 
   const geometry = useMemo(() => {
     const geo = new THREE.OctahedronGeometry(0.18, detail)
-    geo.scale(1, 1.4, 1) // capsule-like vertical stretch
+    geo.scale(1, 1.4, 1)
     return geo
   }, [detail])
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return
     const t = state.clock.getElapsedTime()
-    // Levitation: each token bobs on its own phase.
-    const lift = Math.sin(t * 0.6 + offset) * 0.08
-    groupRef.current.position.set(position.x, position.y + lift, position.z)
 
-    // Inner crystal slow rotation.
+    // ── MORPH: ease toward the target every frame. The clamp on the lerp
+    // factor prevents big jumps on slow frames (delta spikes after tab switches).
+    const lerpFactor = Math.min(delta * 3.5, 1)
+    currentPos.current.lerp(position, lerpFactor)
+
+    // ── LEVITATION: each token bobs on its own phase around the morph path.
+    const lift = Math.sin(t * 0.6 + offset) * 0.08
+    groupRef.current.position.set(
+      currentPos.current.x,
+      currentPos.current.y + lift,
+      currentPos.current.z,
+    )
+
     if (innerRef.current) {
       innerRef.current.rotation.y += 0.004
       const targetScale = isHighlighted ? 1.0 : hovered ? 1.18 : 1.0
@@ -207,9 +229,9 @@ export function MemoryToken({ memory, position, visibility, isHighlighted, detai
       innerRef.current.scale.setScalar(next)
     }
 
-    // Halo gentle pulse (ties the visual into the brain's heartbeat).
     if (haloRef.current) {
-      const beat = (Math.sin(t * 0.9 + offset) * 0.5 + 0.5) * 0.3 + (isHighlighted ? 1.6 : 1.25)
+      const beat =
+        (Math.sin(t * 0.9 + offset) * 0.5 + 0.5) * 0.3 + (isHighlighted ? 1.6 : 1.25)
       haloRef.current.scale.setScalar(beat)
     }
   })
@@ -236,12 +258,10 @@ export function MemoryToken({ memory, position, visibility, isHighlighted, detai
   return (
     <group
       ref={groupRef}
-      position={position}
       onClick={handleClick}
       onPointerEnter={handleEnter}
       onPointerLeave={handleLeave}
     >
-      {/* Crystal body */}
       <mesh ref={innerRef} geometry={geometry}>
         <meshPhysicalMaterial
           color={memory.color}
@@ -259,12 +279,10 @@ export function MemoryToken({ memory, position, visibility, isHighlighted, detai
         />
       </mesh>
 
-      {/* Holographic thumbnail inside the crystal */}
       <group scale={visibility}>
         <MemoryThumbnail memory={memory} />
       </group>
 
-      {/* Outer halo (back-side sphere = glow without occluding the crystal) */}
       <mesh ref={haloRef} renderOrder={2}>
         <sphereGeometry args={[0.18, 16, 16]} />
         <meshBasicMaterial
@@ -278,7 +296,6 @@ export function MemoryToken({ memory, position, visibility, isHighlighted, detai
         />
       </mesh>
 
-      {/* Per-token point light when highlighted */}
       {isHighlighted && <pointLight color={memory.color} intensity={1.5} distance={2} />}
     </group>
   )

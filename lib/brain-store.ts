@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import type { Memory, MemoryType } from "@/lib/types"
+import type { BrainMode } from "@/lib/brain-logic"
 
 const ALL_TYPES: MemoryType[] = ["photo", "audio", "video", "note"]
 
@@ -12,6 +13,10 @@ interface BrainState {
   yearRange: [number, number]
   activeLocation: string | null
 
+  // Spatial mode (cluster | time | map | people) — drives target positions
+  brainMode: BrainMode
+  hoveredNodeId: string | null
+
   // Whether the year range was already initialized from the user's profile
   initialized: boolean
 
@@ -21,6 +26,8 @@ interface BrainState {
   setVisibleTypes: (ts: Set<MemoryType>) => void
   setYearRange: (range: [number, number]) => void
   setActiveLocation: (loc: string | null) => void
+  setBrainMode: (mode: BrainMode) => void
+  setHoveredNodeId: (id: string | null) => void
   initializeFromProfile: (birthDateISO?: string) => void
 }
 
@@ -32,9 +39,13 @@ export const useBrainStore = create<BrainState>((set, get) => ({
     return [cy - 5, cy] as [number, number]
   })(),
   activeLocation: null,
+  brainMode: "cluster",
+  hoveredNodeId: null,
   initialized: false,
 
   setSelectedMemory: (m) => set({ selectedMemory: m }),
+  setBrainMode: (mode) => set({ brainMode: mode }),
+  setHoveredNodeId: (id) => set({ hoveredNodeId: id }),
 
   toggleType: (type) => {
     const prev = get().visibleTypes

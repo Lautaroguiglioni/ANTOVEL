@@ -1,12 +1,11 @@
 "use client"
 
-import Image from "next/image"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 
 /**
- * Hero step — Antovel logo with multi-harmonic floating motion +
- * bioluminescent halo. The PNG sits on top of a screen-blended
- * surface so its black backdrop disappears against the dark UI
- * and the violet petals appear to glow from within the halo.
+ * Hero step — pure-SVG Antovel logo with multi-harmonic floating motion +
+ * bioluminescent halo. No raster, no checkerboard backdrop: the SVG
+ * is rendered crisp at any density and stacks on top of the halo glow.
  */
 export function StepWelcome() {
   return (
@@ -25,16 +24,9 @@ export function StepWelcome() {
 
         {/* Multi-harmonic float wrappers — Y (5s) wraps X (7s) so the
             irrational ratio yields a non-repeating Lissajous motion. */}
-        <div className="absolute inset-0 animate-float-y will-change-transform">
-          <div className="absolute inset-0 animate-float-x will-change-transform">
-            <Image
-              src="/antovel-logo.png"
-              alt="Antovel"
-              width={320}
-              height={320}
-              priority
-              className="h-full w-full object-contain mix-blend-screen drop-shadow-[0_0_28px_rgba(167,139,250,0.55)]"
-            />
+        <div className="absolute inset-0 flex animate-float-y items-center justify-center will-change-transform">
+          <div className="flex h-full w-full animate-float-x items-center justify-center will-change-transform">
+            <LogoAntovel size={240} animated glow />
           </div>
         </div>
       </div>

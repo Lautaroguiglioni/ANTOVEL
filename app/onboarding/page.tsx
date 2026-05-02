@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { ArrowRight, ChevronLeft } from "lucide-react"
 import { useOnboarding } from "@/hooks/useOnboarding"
 import { AntovelLogo } from "@/components/onboarding/AntovelLogo"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 import { NeuralBackground } from "@/components/onboarding/NeuralBackground"
 import { ProgressDots } from "@/components/onboarding/ProgressDots"
 import {
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
+    <main className="relative mx-auto flex min-h-dvh w-full max-w-[560px] flex-col overflow-hidden bg-background">
       <NeuralBackground />
 
       {/* Header: logo + dots */}
@@ -164,14 +164,9 @@ export default function OnboardingPage() {
         >
           <div className="relative flex h-56 w-56 items-center justify-center">
             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.7)_0%,rgba(6,182,212,0.22)_45%,transparent_70%)] blur-2xl animate-activation-glow" />
-            <Image
-              src="/antovel-logo.png"
-              alt=""
-              width={320}
-              height={320}
-              priority
-              className="relative h-44 w-44 object-contain mix-blend-screen drop-shadow-[0_0_44px_rgba(167,139,250,0.85)] animate-activation-pulse"
-            />
+            <div className="relative animate-activation-pulse drop-shadow-[0_0_44px_rgba(167,139,250,0.85)]">
+              <LogoAntovel size={176} decorative glow={false} />
+            </div>
           </div>
         </div>
       )}

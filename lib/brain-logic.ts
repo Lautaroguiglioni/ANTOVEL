@@ -103,3 +103,155 @@ export function formatMemoryDate(iso: string): string {
     year: "numeric",
   })
 }
+
+/* ─────────────────────────────────────
+   Brain spatial modes — Phase 2 morph
+   (additive: cluster is the original
+    Fibonacci, kept untouched)
+   ───────────────────────────────────── */
+
+export type BrainMode = "cluster" | "time" | "map" | "people"
+
+/** Stable per-id RNG so positions don't jitter between frames. */
+function hashId(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) {
+    h = (h << 5) - h + id.charCodeAt(i)
+    h |= 0
+  }
+  return Math.abs(h) || 1
+}
+
+/**
+ * MODE: TIME — chronological 3D spiral.
+ * Older memories sit at the back (negative Z), newer at the front.
+ * 3 full revolutions, vertical spread of 4 units, depth spread of 6.
+ */
+export function getTimePosition(memory: Memory, allMemories: Memory[]): THREE.Vector3 {
+  const sorted = [...allMemories].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  )
+  const idx = sorted.findIndex((m) => m.id === memory.id)
+  const denom = Math.max(sorted.length - 1, 1)
+  const t = idx / denom // 0 oldest → 1 newest
+
+  const angle = t * Math.PI * 6
+  const radius = 1.6 + t * 1.2
+  return new THREE.Vector3(
+    Math.cos(angle) * radius,
+    (t - 0.5) * 4,
+    (t - 0.5) * -6,
+  )
+}
+
+/**
+ * MODE: MAP — geographic clusters.
+ * Memories are grouped by `location.name`; each cluster gets a stable
+ * slot on a wide ring around the origin. Memories without location
+ * drift behind the camera in a soft cloud.
+ */
+export function getMapPosition(memory: Memory, allMemories: Memory[]): THREE.Vector3 {
+  if (!memory.location) {
+    const seed = hashId(memory.id)
+    return new THREE.Vector3(
+      Math.sin(seed * 0.7) * 0.7,
+      Math.cos(seed * 1.3) * 0.7,
+      -3.6,
+    )
+  }
+  // Stable, deterministic order of unique location names.
+  const locations = Array.from(
+    new Set(allMemories.filter((m) => m.location).map((m) => m.location!.name)),
+  ).sort()
+  const idx = Math.max(locations.indexOf(memory.location.name), 0)
+  const total = Math.max(locations.length, 1)
+  const angle = (idx / total) * Math.PI * 2
+  const ringR = 3.2
+  const center = new THREE.Vector3(
+    Math.cos(angle) * ringR,
+    Math.sin(angle) * ringR * 0.42, // slight ellipse so it reads as 3D
+    Math.sin(angle * 2) * 0.9,
+  )
+  const seed = hashId(memory.id)
+  return center.add(
+    new THREE.Vector3(
+      Math.sin(seed * 0.7) * 0.55,
+      Math.cos(seed * 1.3) * 0.55,
+      Math.sin(seed * 2.1) * 0.35,
+    ),
+  )
+}
+
+/**
+ * MODE: PEOPLE — relational planets.
+ * Each tag-group gets a fixed gravity well; memories drift around it.
+ * Match priority follows TAG_GROUPS order so a memory with both
+ * "Familia" and "Viajes" lands in the family planet.
+ */
+const TAG_GROUPS: Array<{ name: string; tags: string[]; center: [number, number, number] }> = [
+  { name: "Familia", tags: ["Familia", "Amor"], center: [-2.6, 0.6, 0] },
+  { name: "Amigos", tags: ["Amigos", "Celebración"], center: [2.6, 0.6, 0] },
+  { name: "Trabajo", tags: ["Carrera", "Trabajo"], center: [0, 2.6, 0] },
+  {
+    name: "Personal",
+    tags: ["Personal", "Reflexión", "Hogar", "Filosofía", "Voz"],
+    center: [0, -2.6, 0],
+  },
+  {
+    name: "Viajes",
+    tags: ["Viajes", "Aventura", "Naturaleza", "Mar"],
+    center: [0, 0, 3],
+  },
+  {
+    name: "Creatividad",
+    tags: ["Música", "Creatividad", "Gastronomía"],
+    center: [0, 0, -3],
+  },
+]
+
+export function getPeopleGroupCenters(): Array<{
+  name: string
+  center: THREE.Vector3
+}> {
+  return TAG_GROUPS.map((g) => ({
+    name: g.name,
+    center: new THREE.Vector3(...g.center),
+  }))
+}
+
+export function getPeoplePosition(memory: Memory): THREE.Vector3 {
+  const group = TAG_GROUPS.find((g) => g.tags.some((t) => memory.tags.includes(t)))
+  const base = group ? new THREE.Vector3(...group.center) : new THREE.Vector3(0, 0, 0)
+  const seed = hashId(memory.id)
+  return base.add(
+    new THREE.Vector3(
+      Math.sin(seed * 0.9) * 0.85,
+      Math.cos(seed * 1.7) * 0.85,
+      Math.sin(seed * 2.3) * 0.85,
+    ),
+  )
+}
+
+/**
+ * Master interpolator — given a memory and the active mode, returns its
+ * target world position. The MemoryToken lerps from current → target.
+ * For cluster mode, the BrainScene already precomputes Fibonacci points,
+ * so this helper falls back to (0,0,0) and the scene overrides per id.
+ */
+export function getTargetPosition(
+  memory: Memory,
+  allMemories: Memory[],
+  mode: BrainMode,
+  fallback: THREE.Vector3,
+): THREE.Vector3 {
+  switch (mode) {
+    case "cluster":
+      return fallback
+    case "time":
+      return getTimePosition(memory, allMemories)
+    case "map":
+      return getMapPosition(memory, allMemories)
+    case "people":
+      return getPeoplePosition(memory)
+  }
+}

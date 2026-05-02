@@ -10,6 +10,7 @@ import type { AntovelProfile, Memory } from "@/lib/types"
 import { BrainHUD } from "@/components/brain/BrainHUD"
 import { GeoPanel } from "@/components/brain/GeoPanel"
 import { MemoryCapsule } from "@/components/brain/MemoryCapsule"
+import { ModeBar } from "@/components/brain/ModeBar"
 
 /**
  * Brain HUD page. The 3D canvas itself lives in the (main) layout
@@ -112,7 +113,7 @@ export default function BrainPage() {
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-dvh w-full overflow-hidden">
       {/* Floating UI (header + filters + timeline + counter — preserved) */}
       <BrainHUD
         profile={profile}
@@ -136,6 +137,9 @@ export default function BrainPage() {
         activeLocation={activeLocation}
         onLocationSelect={(loc) => setActiveLocation(loc?.name ?? null)}
       />
+
+      {/* Mode switcher (cluster | time | map | people) */}
+      <ModeBar />
 
       {/* Immersive memory capsule */}
       <MemoryCapsule

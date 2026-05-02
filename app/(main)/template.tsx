@@ -4,25 +4,25 @@ import { motion } from "framer-motion"
 import type { ReactNode } from "react"
 
 /**
- * template.tsx re-mounts on every route change inside (main)/* — perfect
- * for native-style page transitions without affecting the persistent
- * BrainCanvas which lives in layout.tsx (never remounts).
+ * Page transition wrapper. Opacity-only — no transform animations.
  *
- * `min-h-full` (not `h-full`) lets pages grow taller than the shell so
- * the parent's overflow-y-auto can scroll them. `pb-32` reserves space
- * for the floating TabBar (z-50, glass) on the 4 primary routes.
+ * Why no transforms: a `transform` (even `translate3d(0,0,0)`) on this
+ * element creates a containing block for any descendant `position: fixed`
+ * (modals, the memory capsule, dropdowns). That breaks fullscreen overlays
+ * by confining them to this wrapper instead of the viewport. Animating
+ * just opacity keeps the visual cross-fade between tabs without that bug.
+ *
+ * `pb-32` reserves space at the bottom so the floating glass TabBar
+ * doesn't cover the final content.
  */
 export default function MainTemplate({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={{
-        duration: 0.32,
-        ease: [0.4, 0, 0.2, 1],
-      }}
-      className="min-h-full w-full pb-32"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="w-full pb-32"
     >
       {children}
     </motion.div>

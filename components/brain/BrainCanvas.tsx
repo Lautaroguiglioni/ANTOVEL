@@ -5,6 +5,7 @@ import { Suspense, useState } from "react"
 import { BrainScene } from "./BrainScene"
 import { useDeviceQuality } from "@/hooks/useDeviceQuality"
 import type { Memory, MemoryType } from "@/lib/types"
+import type { BrainMode } from "@/lib/brain-logic"
 
 interface Props {
   memories: Memory[]
@@ -12,6 +13,7 @@ interface Props {
   yearRange: [number, number]
   activeLocationName: string | null
   focusedId: string | null
+  brainMode: BrainMode
   onSelectMemory: (m: Memory) => void
   /**
    * When true, the render loop stops (frameloop="never").
@@ -27,6 +29,7 @@ export default function BrainCanvas({
   yearRange,
   activeLocationName,
   focusedId,
+  brainMode,
   onSelectMemory,
   paused = false,
 }: Props) {
@@ -54,6 +57,7 @@ export default function BrainCanvas({
           yearRange={yearRange}
           activeLocationName={activeLocationName}
           focusedId={focusedId}
+          brainMode={brainMode}
           onSelectMemory={onSelectMemory}
           onUserInteract={setInteracting}
           autoRotate={!interacting}

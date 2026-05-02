@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { EssencePanel } from "@/components/alzheimer/EssencePanel"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 import { mockEssence, mockDonations } from "@/lib/alzheimer/mock-alzheimer-data"
 import { capabilitiesFor } from "@/lib/alzheimer/permissions"
 
@@ -38,14 +38,7 @@ export default function EssencePage() {
             Volver al cerebro
           </Link>
           <div className="flex items-center gap-2">
-            <Image
-              src="/antovel-logo.png"
-              alt="Antovel"
-              width={28}
-              height={28}
-              className="size-7 object-contain"
-              style={{ mixBlendMode: "screen" }}
-            />
+            <LogoAntovel size={28} decorative />
             <span className="font-serif text-lg tracking-wider text-white">Esencia</span>
           </div>
         </div>
