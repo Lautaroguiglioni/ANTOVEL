@@ -4,21 +4,24 @@ import { motion } from "framer-motion"
 import type { ReactNode } from "react"
 
 /**
- * template.tsx remounts on every route change inside (main)/* — perfect
- * for native-style page transitions without affecting the persistent
- * BrainCanvas in layout.tsx.
+ * Page transition wrapper. Opacity-only — no transform animations.
  *
- * No `h-full` or `min-h-full` here — the parent (#antovel-scroll) owns
- * the scroll. We only set width and reserve `pb-32` so the floating
- * glass TabBar doesn't cover the last items.
+ * Why no transforms: a `transform` (even `translate3d(0,0,0)`) on this
+ * element creates a containing block for any descendant `position: fixed`
+ * (modals, the memory capsule, dropdowns). That breaks fullscreen overlays
+ * by confining them to this wrapper instead of the viewport. Animating
+ * just opacity keeps the visual cross-fade between tabs without that bug.
+ *
+ * `pb-32` reserves space at the bottom so the floating glass TabBar
+ * doesn't cover the final content.
  */
 export default function MainTemplate({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
       className="w-full pb-32"
     >
       {children}

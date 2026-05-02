@@ -34,7 +34,7 @@ export function TabBar() {
     <nav
       aria-label="Navegación principal"
       className="
-        pointer-events-auto absolute inset-x-0 bottom-0 z-50
+        pointer-events-auto fixed inset-x-0 bottom-0 z-50
         border-t border-white/10
         bg-black/55 backdrop-blur-md
         [&]:supports-[backdrop-filter]:bg-black/40
@@ -43,7 +43,7 @@ export function TabBar() {
         paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
       }}
     >
-      <ul className="mx-auto grid max-w-[430px] grid-cols-4 px-2 pt-2">
+      <ul className="mx-auto grid w-full max-w-[480px] grid-cols-4 px-2 pt-2 md:max-w-[560px]">
         {TABS.map((tab) => {
           const isActive = pathname.startsWith(tab.href)
           const Icon = tab.icon

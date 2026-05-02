@@ -96,7 +96,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
+    <main className="relative mx-auto flex min-h-dvh w-full max-w-[560px] flex-col overflow-hidden bg-background">
       <NeuralBackground />
 
       {/* Header: logo + dots */}

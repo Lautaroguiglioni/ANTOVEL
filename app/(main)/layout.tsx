@@ -3,31 +3,24 @@ import { TabBar } from "@/components/layout/TabBar"
 import { PersistentBrainScene } from "@/components/brain/PersistentBrainScene"
 
 /**
- * Native-app shell for the (main) experience.
+ * (main) layout — flat page structure.
  *
- * Scroll architecture (single source of truth):
- * - The 430px MobileLayout shell is `relative h-dvh overflow-hidden`.
- * - We mount ONE scroll container here (`absolute inset-0 overflow-y-auto`)
- *   that fills the shell exactly. `absolute inset-0` gives it a guaranteed
- *   concrete height regardless of the page tree above (no fragile
- *   `h-full` chains, no flex-context dependencies).
- * - Children pages MUST NOT add their own `overflow-y-auto` or `h-full`
- *   to a wrapping `<main>` — that creates a nested scroll that collapses
- *   when its parent has only `min-height`, eating touch gestures.
- * - The PersistentBrainScene sits behind (z-0) and the TabBar floats
- *   above (z-50). Both are `absolute` and untouched by scroll.
+ * - PersistentBrainScene is `fixed inset-0` to the viewport, mounted once
+ *   and shown only on /brain (visibility toggled, render loop paused
+ *   elsewhere via `frameloop="never"`).
+ * - Children flow in normal document order so the body owns the scroll.
+ *   This gives mobile and desktop identical, predictable scrolling.
+ * - TabBar is `fixed bottom-0` (centered, max-width inside) so it floats
+ *   over content but doesn't trap pointer events outside the bar itself.
+ *
+ * No nested scroll containers, no fragile `h-full` chains, no
+ * transformed wrappers around fixed-position modals.
  */
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <PersistentBrainScene />
-      <div
-        id="antovel-scroll"
-        className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden overscroll-contain"
-        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
-      >
-        {children}
-      </div>
+      {children}
       <TabBar />
     </>
   )

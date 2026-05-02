@@ -112,7 +112,7 @@ export default function BrainPage() {
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-dvh w-full overflow-hidden">
       {/* Floating UI (header + filters + timeline + counter — preserved) */}
       <BrainHUD
         profile={profile}
