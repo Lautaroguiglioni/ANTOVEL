@@ -34,9 +34,9 @@ export function TabBar() {
     <nav
       aria-label="Navegación principal"
       className="
-        pointer-events-auto absolute inset-x-0 bottom-0 z-40
+        pointer-events-auto absolute inset-x-0 bottom-0 z-50
         border-t border-white/10
-        bg-black/55 backdrop-blur-2xl
+        bg-black/55 backdrop-blur-md
         [&]:supports-[backdrop-filter]:bg-black/40
       "
       style={{

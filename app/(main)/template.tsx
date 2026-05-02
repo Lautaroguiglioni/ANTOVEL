@@ -8,8 +8,9 @@ import type { ReactNode } from "react"
  * for native-style page transitions without affecting the persistent
  * BrainCanvas which lives in layout.tsx (never remounts).
  *
- * New screen slides in from the right; the previous one is unmounted by
- * Next.js (we keep the slide subtle so it feels like a native push).
+ * `min-h-full` (not `h-full`) lets pages grow taller than the shell so
+ * the parent's overflow-y-auto can scroll them. `pb-32` reserves space
+ * for the floating TabBar (z-50, glass) on the 4 primary routes.
  */
 export default function MainTemplate({ children }: { children: ReactNode }) {
   return (
@@ -21,7 +22,7 @@ export default function MainTemplate({ children }: { children: ReactNode }) {
         duration: 0.32,
         ease: [0.4, 0, 0.2, 1],
       }}
-      className="h-full w-full"
+      className="min-h-full w-full pb-32"
     >
       {children}
     </motion.div>
