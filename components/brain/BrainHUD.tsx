@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Image as ImageIcon, Mic, Film, FileText, Lay
 import * as Slider from "@radix-ui/react-slider"
 import { MEMORY_TYPE_COLOR, MEMORY_TYPE_LABEL } from "@/lib/brain-logic"
 import { PredictiveSearch } from "./PredictiveSearch"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 import type { AntovelProfile, Memory, MemoryType } from "@/lib/types"
 
 interface Props {
@@ -68,14 +69,7 @@ export function BrainHUD({
             href="/"
             className="pointer-events-auto inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-[#12121E]/70 px-3 py-1.5 text-sm font-display tracking-wide text-foreground/90 backdrop-blur-md transition-colors hover:border-white/20"
           >
-            <Image
-              src="/antovel-logo.png"
-              alt=""
-              width={20}
-              height={20}
-              className="object-contain"
-              style={{ mixBlendMode: "screen" }}
-            />
+            <LogoAntovel size={20} glow={false} decorative />
             Antovel
           </Link>
 

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
-import Image from "next/image"
 import { Plus } from "lucide-react"
 import { loadProfile } from "@/hooks/useOnboarding"
 import { useHealthData } from "@/hooks/useHealthData"
@@ -12,6 +11,7 @@ import type { AntovelProfile } from "@/lib/types"
 import { ProgressRing } from "@/components/health/ProgressRing"
 import { HealthCard } from "@/components/health/HealthCard"
 import { HealthModal } from "@/components/health/HealthModal"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 
 // Avatar needs WebGL
 const AvatarViewer = dynamic(
@@ -69,13 +69,7 @@ export default function HealthPage() {
       <section className="relative flex h-[55dvh] flex-col items-center justify-center px-4">
         {/* Header with logo */}
         <header className="absolute left-4 top-4 z-10 flex items-center gap-3">
-          <Image
-            src="/antovel-logo.png"
-            alt="Antovel"
-            width={36}
-            height={36}
-            className="mix-blend-screen"
-          />
+          <LogoAntovel size={36} decorative />
           <span className="font-display text-lg font-semibold text-foreground tracking-wide">
             Salud
           </span>

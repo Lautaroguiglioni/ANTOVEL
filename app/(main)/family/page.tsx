@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Users } from "lucide-react"
 import type { MemoryExtended } from "@/lib/types"
 import { FamilyInjectionPortal } from "@/components/alzheimer/FamilyInjectionPortal"
+import { LogoAntovel } from "@/components/brand/LogoAntovel"
 import { mockDonations, mockEssence } from "@/lib/alzheimer/mock-alzheimer-data"
 import { capabilitiesFor } from "@/lib/alzheimer/permissions"
 import { MEMORY_TYPE_COLOR } from "@/lib/brain-logic"
@@ -57,14 +57,7 @@ export default function FamilyPage() {
             Volver al cerebro
           </Link>
           <div className="flex items-center gap-2">
-            <Image
-              src="/antovel-logo.png"
-              alt="Antovel"
-              width={28}
-              height={28}
-              className="size-7 object-contain"
-              style={{ mixBlendMode: "screen" }}
-            />
+            <LogoAntovel size={28} decorative />
             <span className="font-serif text-lg tracking-wider text-white">Familia</span>
           </div>
         </div>
