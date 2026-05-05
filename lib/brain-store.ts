@@ -16,6 +16,7 @@ interface BrainState {
   // Spatial mode (cluster | time | map | people) — drives target positions
   brainMode: BrainMode
   hoveredNodeId: string | null
+  morphProgress: number // 0→1 during mode transition
 
   // Whether the year range was already initialized from the user's profile
   initialized: boolean
@@ -28,6 +29,7 @@ interface BrainState {
   setActiveLocation: (loc: string | null) => void
   setBrainMode: (mode: BrainMode) => void
   setHoveredNodeId: (id: string | null) => void
+  setMorphProgress: (v: number) => void
   initializeFromProfile: (birthDateISO?: string) => void
 }
 
@@ -41,11 +43,13 @@ export const useBrainStore = create<BrainState>((set, get) => ({
   activeLocation: null,
   brainMode: "cluster",
   hoveredNodeId: null,
+  morphProgress: 1,
   initialized: false,
 
   setSelectedMemory: (m) => set({ selectedMemory: m }),
-  setBrainMode: (mode) => set({ brainMode: mode }),
+  setBrainMode: (mode) => set({ brainMode: mode, morphProgress: 0 }),
   setHoveredNodeId: (id) => set({ hoveredNodeId: id }),
+  setMorphProgress: (v) => set({ morphProgress: v }),
 
   toggleType: (type) => {
     const prev = get().visibleTypes

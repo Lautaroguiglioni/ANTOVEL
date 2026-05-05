@@ -32,11 +32,15 @@ export function fibonacciSphere(count: number, radius: number): THREE.Vector3[] 
     // theta sweeps from 0..π (latitude); phi rotates with golden angle.
     const theta = Math.acos(1 - (2 * (i + 0.5)) / count)
     const phi = (2 * Math.PI * i) / goldenRatio
+    // Organic noise: each node has a unique, stable radial offset
+    // so the cluster feels alive instead of perfectly mathematical.
+    const noise = Math.sin(i * 127.1) * Math.cos(i * 311.7) * 0.25
+    const r = radius + noise
     points.push(
       new THREE.Vector3(
-        radius * Math.sin(theta) * Math.cos(phi),
-        radius * Math.sin(theta) * Math.sin(phi),
-        radius * Math.cos(theta),
+        r * Math.sin(theta) * Math.cos(phi),
+        r * Math.sin(theta) * Math.sin(phi),
+        r * Math.cos(theta),
       ),
     )
   }
@@ -152,6 +156,7 @@ export function getTimePosition(memory: Memory, allMemories: Memory[]): THREE.Ve
  */
 export function getMapPosition(memory: Memory, allMemories: Memory[]): THREE.Vector3 {
   if (!memory.location) {
+    // No location: drift behind the camera in a soft cloud.
     const seed = hashId(memory.id)
     return new THREE.Vector3(
       Math.sin(seed * 0.7) * 0.7,
@@ -159,25 +164,23 @@ export function getMapPosition(memory: Memory, allMemories: Memory[]): THREE.Vec
       -3.6,
     )
   }
-  // Stable, deterministic order of unique location names.
-  const locations = Array.from(
-    new Set(allMemories.filter((m) => m.location).map((m) => m.location!.name)),
-  ).sort()
-  const idx = Math.max(locations.indexOf(memory.location.name), 0)
-  const total = Math.max(locations.length, 1)
-  const angle = (idx / total) * Math.PI * 2
-  const ringR = 3.2
+  // Lat/lng → spherical projection (globe effect).
+  const { lat, lng } = memory.location
+  const phi = (90 - lat) * (Math.PI / 180)
+  const theta = (lng + 180) * (Math.PI / 180)
+  const r = 2.8
   const center = new THREE.Vector3(
-    Math.cos(angle) * ringR,
-    Math.sin(angle) * ringR * 0.42, // slight ellipse so it reads as 3D
-    Math.sin(angle * 2) * 0.9,
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta),
   )
+  // Per-memory dispersion so overlapping locations don't stack.
   const seed = hashId(memory.id)
   return center.add(
     new THREE.Vector3(
-      Math.sin(seed * 0.7) * 0.55,
-      Math.cos(seed * 1.3) * 0.55,
-      Math.sin(seed * 2.1) * 0.35,
+      Math.sin(seed * 0.7) * 0.35,
+      Math.cos(seed * 1.3) * 0.35,
+      Math.sin(seed * 2.1) * 0.25,
     ),
   )
 }

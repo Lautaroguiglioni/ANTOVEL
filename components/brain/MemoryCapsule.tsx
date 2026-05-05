@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
-import { Calendar, MapPin, Tag, X, Image as ImageIcon, Mic, Film, FileText } from "lucide-react"
+import { Calendar, MapPin, Tag, X, Image as ImageIcon, Mic, Film, FileText, Heart, Play, Users } from "lucide-react"
 import { MEMORY_TYPE_COLOR, MEMORY_TYPE_LABEL } from "@/lib/brain-logic"
-import type { Memory } from "@/lib/types"
+import type { Memory, MemoryExtended } from "@/lib/types"
 
 interface Props {
   memory: Memory | null
@@ -172,6 +172,88 @@ export function MemoryCapsule({ memory, related, onClose, onSelectRelated }: Pro
                 {memory.description ? (
                   <p className="text-pretty text-sm leading-relaxed text-foreground/80">{memory.description}</p>
                 ) : null}
+
+                {/* ── Family donation banner ─── */}
+                {(() => {
+                  const ext = memory as MemoryExtended
+                  if (!ext.isFamilyDonation) return null
+                  return (
+                    <div
+                      className="flex items-start gap-3 rounded-2xl border p-4"
+                      style={{
+                        borderColor: "rgba(245,158,11,0.3)",
+                        background: "rgba(245,158,11,0.06)",
+                      }}
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F59E0B]/20">
+                        <Users size={16} className="text-[#F59E0B]" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-[#F59E0B]">
+                          Donación de {ext.donorName} · {ext.donorRelation}
+                        </p>
+                        {ext.injectionNote && (
+                          <p className="mt-1 text-[13px] italic text-foreground/70">
+                            &ldquo;{ext.injectionNote}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* ── Mock audio/video player ─── */}
+                {(memory.type === "audio" || memory.type === "video") && memory.duration && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
+                      style={{ background: `${accent}22`, color: accent }}
+                    >
+                      <Play size={18} fill={accent} />
+                    </button>
+                    <div className="flex-1">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: "0%", background: accent }}
+                        />
+                      </div>
+                      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground tabular-nums">
+                        <span>0:00</span>
+                        <span>{memory.duration}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Therapeutic significance ─── */}
+                {(() => {
+                  const ext = memory as MemoryExtended
+                  if (!ext.therapeuticTag) return null
+                  const labels: Record<string, { label: string; color: string }> = {
+                    identity: { label: "Recuerdo de identidad", color: "#A78BFA" },
+                    family_bond: { label: "Vínculo familiar", color: "#EC4899" },
+                    life_milestone: { label: "Hito de vida", color: "#F59E0B" },
+                    happy_place: { label: "Lugar feliz", color: "#10B981" },
+                    daily_anchor: { label: "Ancla cotidiana", color: "#06B6D4" },
+                    sensory: { label: "Recuerdo sensorial", color: "#8B5CF6" },
+                  }
+                  const info = labels[ext.therapeuticTag]
+                  if (!info) return null
+                  return (
+                    <div className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium"
+                      style={{
+                        borderColor: `${info.color}44`,
+                        background: `${info.color}12`,
+                        color: info.color,
+                      }}
+                    >
+                      <Heart size={11} />
+                      {info.label}
+                    </div>
+                  )
+                })()}
 
                 {memory.tags.length > 0 ? (
                   <div className="flex flex-wrap items-center gap-1.5">

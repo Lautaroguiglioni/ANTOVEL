@@ -26,6 +26,7 @@ export function PersistentBrainScene() {
   const visibleTypes = useBrainStore((s) => s.visibleTypes)
   const yearRange = useBrainStore((s) => s.yearRange)
   const activeLocation = useBrainStore((s) => s.activeLocation)
+  const brainMode = useBrainStore((s) => s.brainMode)
   const selectedMemory = useBrainStore((s) => s.selectedMemory)
   const setSelectedMemory = useBrainStore((s) => s.setSelectedMemory)
 
@@ -57,6 +58,7 @@ export function PersistentBrainScene() {
           visibleTypes={visibleTypes}
           yearRange={yearRange}
           activeLocationName={activeLocation}
+          brainMode={brainMode}
           focusedId={selectedMemory?.id ?? null}
           onSelectMemory={(m: Memory) => setSelectedMemory(m)}
           paused={!isBrainRoute}

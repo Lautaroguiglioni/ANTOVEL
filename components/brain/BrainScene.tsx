@@ -1,19 +1,21 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useMemo, useRef, Suspense } from "react"
 import * as THREE from "three"
-import { OrbitControls } from "@react-three/drei"
+import { Billboard, OrbitControls, Text } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import { OrganicBrain } from "./OrganicBrain"
 import { MemoryToken } from "./MemoryToken"
 import { ConnectionLine } from "./ConnectionLine"
 import { SynapticParticles } from "./SynapticParticles"
 import { CinematicCamera } from "./CinematicCamera"
+import { TimeLabels } from "./TimeLabels"
 import { PostFX } from "./PostFX"
 import {
   fibonacciSphere,
   buildConnections,
   getTargetPosition,
+  getPeopleGroupCenters,
   type BrainMode,
 } from "@/lib/brain-logic"
 import type { Memory, MemoryType } from "@/lib/types"
@@ -152,25 +154,51 @@ export function BrainScene({
         })}
 
       {/* ─── Capa 4: Memory Tokens cristalinos con morfosis ─── */}
-      {memories.map((m) => {
-        const pos = targetPositions.get(m.id)
-        const state = nodeStates.get(m.id)
-        if (!pos || !state) return null
-        return (
-          <MemoryToken
-            key={m.id}
-            memory={m}
-            position={pos}
-            visibility={state.visibility}
-            isHighlighted={state.isHighlighted}
-            detail={quality.tokenGeometryDetail}
-            onSelect={onSelectMemory}
-          />
-        )
-      })}
+      <Suspense fallback={<mesh><sphereGeometry args={[0.1]} /><meshBasicMaterial color="purple" /></mesh>}>
+        {memories.map((m) => {
+          const pos = targetPositions.get(m.id)
+          const state = nodeStates.get(m.id)
+          if (!pos || !state) return null
+          return (
+            <MemoryToken
+              key={m.id}
+              memory={m}
+              position={pos}
+              visibility={state.visibility}
+              isHighlighted={state.isHighlighted}
+              detail={quality.tokenGeometryDetail}
+              onSelect={onSelectMemory}
+            />
+          )
+        })}
+      </Suspense>
 
       {/* ─── Capa 5: Partículas sinápticas ambientales ─── */}
       <SynapticParticles count={quality.particleCount} />
+
+      {/* ─── Capa 6: Labels de modo TIME (años flotantes) ─── */}
+      {brainMode === "time" && <TimeLabels memories={memories} />}
+
+      {/* ─── Capa 7: Labels de modo PEOPLE (nombres de grupo) ─── */}
+      {brainMode === "people" &&
+        getPeopleGroupCenters().map((g) => (
+          <Billboard
+            key={g.name}
+            position={[g.center.x, g.center.y + 1.3, g.center.z]}
+            follow
+          >
+            <Text
+              fontSize={0.22}
+              color="rgba(167,139,250,0.35)"
+              anchorX="center"
+              anchorY="bottom"
+              outlineWidth={0.008}
+              outlineColor="rgba(0,0,0,0.5)"
+            >
+              {g.name}
+            </Text>
+          </Billboard>
+        ))}
 
       {/* ─── OrbitControls (paused during interaction & focus) ─── */}
       <OrbitControls

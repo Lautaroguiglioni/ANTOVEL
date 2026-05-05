@@ -2,178 +2,213 @@
 
 import { useRef, useMemo } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { OrbitControls, Environment } from "@react-three/drei"
+import { OrbitControls } from "@react-three/drei"
+import { EffectComposer, Bloom } from "@react-three/postprocessing"
 import * as THREE from "three"
 import type { HealthState } from "@/lib/types"
-import { HEALTH_STATE_CONFIG } from "@/lib/mock-health-data"
 
 interface AvatarViewerProps {
   state: HealthState
   healthScore: number
 }
 
-// State-based animation parameters
-const STATE_PARAMS: Record<HealthState, { shoulderDrop: number; breathSpeed: number; breathAmp: number }> = {
-  radiant: { shoulderDrop: 0, breathSpeed: 1.2, breathAmp: 0.02 },
-  good: { shoulderDrop: 0, breathSpeed: 1.0, breathAmp: 0.015 },
-  regular: { shoulderDrop: 0.08, breathSpeed: 0.8, breathAmp: 0.012 },
-  exhausted: { shoulderDrop: 0.15, breathSpeed: 0.5, breathAmp: 0.025 },
-}
-
-function GeometricAvatar({ state }: { state: HealthState }) {
+// ── GEOMETRÍA DEL AVATAR VIDRIO ESMERILADO ────────────────────────────────
+function GlassAvatarMesh({ healthScore, state }: { healthScore: number; state: HealthState }) {
   const groupRef = useRef<THREE.Group>(null)
-  const leftArmRef = useRef<THREE.Mesh>(null)
-  const rightArmRef = useRef<THREE.Mesh>(null)
-  const torsoRef = useRef<THREE.Mesh>(null)
+  const heartRef = useRef<THREE.Mesh>(null)
+  const particlesRef = useRef<THREE.Points>(null)
 
-  const params = STATE_PARAMS[state]
-  const stateConfig = HEALTH_STATE_CONFIG[state]
-  const mainColor = useMemo(() => new THREE.Color(stateConfig.color).lerp(new THREE.Color("#a78bfa"), 0.5), [stateConfig.color])
+  // Postura según estado
+  const postureMap = {
+    radiant: { torsoTilt: 0, headLift: 0.05, armDrop: 0.1 },
+    good: { torsoTilt: 0, headLift: 0, armDrop: 0.3 },
+    regular: { torsoTilt: 0.08, headLift: -0.05, armDrop: 0.5 },
+    exhausted: { torsoTilt: 0.18, headLift: -0.12, armDrop: 0.9 },
+  }
+  const posture = postureMap[state]
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    const breath = Math.sin(t * params.breathSpeed) * params.breathAmp
+  // Material vidrio esmerilado violeta
+  const glassMaterial = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color("#9B5FE0"),
+        roughness: 0.18,
+        metalness: 0.05,
+        transmission: 0.75,
+        thickness: 0.6,
+        ior: 1.45,
+        transparent: true,
+        opacity: 0.92,
+        side: THREE.DoubleSide,
+      }),
+    [],
+  )
 
-    // Torso breathing
-    if (torsoRef.current) {
-      torsoRef.current.scale.setY(1 + breath)
-      torsoRef.current.position.y = 0.6 + breath * 2
+  // Partículas orbitales — cantidad según estado
+  const [particlePositions, particleCount] = useMemo(() => {
+    const count = state === "radiant" ? 60 : state === "good" ? 35 : 15
+    const positions = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2
+      const r = 0.6 + Math.random() * 0.5
+      const h = (Math.random() - 0.5) * 2.5
+      positions[i * 3] = Math.cos(angle) * r
+      positions[i * 3 + 1] = h
+      positions[i * 3 + 2] = Math.sin(angle) * r
     }
+    return [positions, count] as const
+  }, [state])
 
-    // Arms slight idle sway
-    if (leftArmRef.current) {
-      leftArmRef.current.rotation.z = 0.15 + Math.sin(t * 0.7) * 0.03 - params.shoulderDrop * 0.3
-      leftArmRef.current.position.y = 0.5 - params.shoulderDrop
-    }
-    if (rightArmRef.current) {
-      rightArmRef.current.rotation.z = -0.15 - Math.sin(t * 0.7) * 0.03 + params.shoulderDrop * 0.3
-      rightArmRef.current.position.y = 0.5 - params.shoulderDrop
-    }
+  useFrame((frameState, delta) => {
+    if (!groupRef.current || !heartRef.current) return
+    const t = frameState.clock.getElapsedTime()
 
-    // Whole body subtle bob
-    if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(t * params.breathSpeed * 0.5) * 0.01
+    // Idle: rotación suave en Y
+    groupRef.current.rotation.y += delta * 0.3
+
+    // Respiración del torso
+    const breathFreq = state === "exhausted" ? 0.4 : 0.9
+    groupRef.current.position.y = Math.sin(t * breathFreq) * 0.03
+
+    // Pulso del corazón (núcleo de energía)
+    const heartPulse = 0.8 + Math.sin(t * 4) * 0.2
+    heartRef.current.scale.setScalar(heartPulse)
+    const heartMat = heartRef.current.material as THREE.MeshStandardMaterial
+    heartMat.emissiveIntensity = 0.8 + Math.sin(t * 4) * 0.4
+
+    // Rotación de partículas
+    if (particlesRef.current) {
+      particlesRef.current.rotation.y += delta * 0.4
+      particlesRef.current.rotation.x += delta * 0.15
     }
   })
 
-  const material = useMemo(
-    () => (
-      <meshStandardMaterial
-        color={mainColor}
-        emissive={mainColor}
-        emissiveIntensity={state === "radiant" ? 0.3 : 0.1}
-        roughness={0.4}
-        metalness={0.2}
-      />
-    ),
-    [mainColor, state]
-  )
-
   return (
-    <group ref={groupRef}>
-      {/* Head */}
-      <mesh position={[0, 1.6, 0]}>
-        <sphereGeometry args={[0.35, 32, 32]} />
-        {material}
+    <group ref={groupRef} rotation={[0, 0, posture.torsoTilt]}>
+      {/* ── CABEZA ─────────────────────────────────────────────── */}
+      <mesh position={[0, 2.0 + posture.headLift, 0]} material={glassMaterial}>
+        <sphereGeometry args={[0.38, 24, 24]} />
       </mesh>
 
-      {/* Torso */}
-      <mesh ref={torsoRef} position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.28, 0.22, 1.0, 16]} />
-        {material}
+      {/* ── CUELLO ─────────────────────────────────────────────── */}
+      <mesh position={[0, 1.52, 0]} material={glassMaterial}>
+        <cylinderGeometry args={[0.11, 0.13, 0.22, 12]} />
       </mesh>
 
-      {/* Left arm */}
-      <mesh ref={leftArmRef} position={[-0.42, 0.5, 0]} rotation={[0, 0, 0.15]}>
-        <cylinderGeometry args={[0.08, 0.06, 0.8, 12]} />
-        {material}
+      {/* ── TORSO — cono truncado orgánico ─────────────────────── */}
+      <mesh position={[0, 0.65, 0]} material={glassMaterial}>
+        <cylinderGeometry args={[0.28, 0.34, 1.1, 16]} />
       </mesh>
 
-      {/* Right arm */}
-      <mesh ref={rightArmRef} position={[0.42, 0.5, 0]} rotation={[0, 0, -0.15]}>
-        <cylinderGeometry args={[0.08, 0.06, 0.8, 12]} />
-        {material}
+      {/* ── HOMBROS (esferas de transición) ────────────────────── */}
+      <mesh position={[-0.42, 1.18, 0]} material={glassMaterial}>
+        <sphereGeometry args={[0.14, 12, 12]} />
+      </mesh>
+      <mesh position={[0.42, 1.18, 0]} material={glassMaterial}>
+        <sphereGeometry args={[0.14, 12, 12]} />
       </mesh>
 
-      {/* Left leg */}
-      <mesh position={[-0.14, -0.5, 0]}>
-        <cylinderGeometry args={[0.1, 0.08, 1.0, 12]} />
-        {material}
+      {/* ── BRAZOS ─────────────────────────────────────────────── */}
+      <group position={[-0.55, 0.7, 0]} rotation={[0, 0, posture.armDrop]}>
+        <mesh material={glassMaterial}>
+          <cylinderGeometry args={[0.085, 0.065, 0.95, 10]} />
+        </mesh>
+      </group>
+      <group position={[0.55, 0.7, 0]} rotation={[0, 0, -posture.armDrop]}>
+        <mesh material={glassMaterial}>
+          <cylinderGeometry args={[0.085, 0.065, 0.95, 10]} />
+        </mesh>
+      </group>
+
+      {/* ── CADERA ─────────────────────────────────────────────── */}
+      <mesh position={[0, 0.02, 0]} material={glassMaterial}>
+        <cylinderGeometry args={[0.3, 0.26, 0.28, 14]} />
       </mesh>
 
-      {/* Right leg */}
-      <mesh position={[0.14, -0.5, 0]}>
-        <cylinderGeometry args={[0.1, 0.08, 1.0, 12]} />
-        {material}
+      {/* ── PIERNAS ────────────────────────────────────────────── */}
+      <mesh position={[-0.18, -0.82, 0]} material={glassMaterial}>
+        <cylinderGeometry args={[0.11, 0.085, 1.15, 10]} />
       </mesh>
+      <mesh position={[0.18, -0.82, 0]} material={glassMaterial}>
+        <cylinderGeometry args={[0.11, 0.085, 1.15, 10]} />
+      </mesh>
+
+      {/* ── NÚCLEO DE ENERGÍA (corazón pulsante) ───────────────── */}
+      <mesh ref={heartRef} position={[0, 0.72, 0.22]}>
+        <sphereGeometry args={[0.09, 16, 16]} />
+        <meshStandardMaterial
+          color="#EC4899"
+          emissive="#EC4899"
+          emissiveIntensity={1.0}
+          transparent
+          opacity={0.95}
+        />
+      </mesh>
+
+      {/* ── PARTÍCULAS ORBITALES ────────────────────────────────── */}
+      <points ref={particlesRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={particleCount}
+            array={particlePositions}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={state === "radiant" ? 0.025 : 0.015}
+          color={state === "radiant" ? "#F59E0B" : "#7C3AED"}
+          transparent
+          opacity={0.8}
+          sizeAttenuation
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
+
+      {/* ── LUCES QUE SIGUEN AL AVATAR ─────────────────────────── */}
+      <pointLight
+        position={[1.5, 2, 1.5]}
+        color="#7C3AED"
+        intensity={state === "radiant" ? 3.0 : 1.5}
+        distance={5}
+      />
+      <pointLight position={[-1.5, 0, 1]} color="#06B6D4" intensity={1.0} distance={4} />
     </group>
   )
 }
 
-function RadiantParticles() {
-  const pointsRef = useRef<THREE.Points>(null)
-  const count = 50
-
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3)
-    for (let i = 0; i < count; i++) {
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.random() * Math.PI
-      const r = 1.2 + Math.random() * 0.5
-      arr[i * 3] = r * Math.sin(phi) * Math.cos(theta)
-      arr[i * 3 + 1] = r * Math.cos(phi) + 0.5
-      arr[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta)
-    }
-    return arr
-  }, [])
-
-  useFrame(({ clock }) => {
-    if (pointsRef.current) {
-      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.1
-    }
-  })
-
+// ── CANVAS COMPLETO ────────────────────────────────────────────────────────
+export function AvatarViewer({ state, healthScore }: AvatarViewerProps) {
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial size={0.04} color="#facc15" transparent opacity={0.7} sizeAttenuation />
-    </points>
-  )
-}
+    <Canvas
+      camera={{ position: [0, 0.8, 4.5], fov: 45 }}
+      style={{ background: "transparent", height: "100%" }}
+      gl={{ antialias: true, alpha: true }}
+    >
+      <ambientLight intensity={0.2} color="#1a0533" />
+      <pointLight position={[0, 5, 3]} intensity={2.5} color="#7C3AED" />
+      <pointLight position={[3, -2, 2]} intensity={1.5} color="#06B6D4" />
 
-function AvatarScene({ state }: { state: HealthState }) {
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[3, 5, 3]} intensity={1.5} color="#a78bfa" />
-      <pointLight position={[-3, 2, -2]} intensity={0.8} color="#06b6d4" />
-      <Environment preset="night" />
-      <GeometricAvatar state={state} />
-      {state === "radiant" && <RadiantParticles />}
+      <GlassAvatarMesh healthScore={healthScore} state={state} />
+
       <OrbitControls
         enablePan={false}
         enableZoom={false}
         minPolarAngle={Math.PI / 3}
-        maxPolarAngle={Math.PI / 2}
-        autoRotate
-        autoRotateSpeed={0.5}
+        maxPolarAngle={Math.PI * 0.7}
+        autoRotate={false}
       />
-    </>
-  )
-}
 
-export function AvatarViewer({ state }: AvatarViewerProps) {
-  return (
-    <div className="h-full w-full">
-      <Canvas
-        camera={{ position: [0, 0.5, 3.5], fov: 40 }}
-        gl={{ alpha: true, antialias: true }}
-        style={{ background: "transparent" }}
-      >
-        <AvatarScene state={state} />
-      </Canvas>
-    </div>
+      <EffectComposer>
+        <Bloom
+          intensity={1.8}
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.9}
+          mipmapBlur
+          radius={0.7}
+        />
+      </EffectComposer>
+    </Canvas>
   )
 }

@@ -4,7 +4,8 @@ import { useMemo, useRef, useState } from "react"
 import { useFrame } from "@react-three/fiber"
 import type { ThreeEvent } from "@react-three/fiber"
 import * as THREE from "three"
-import type { Memory } from "@/lib/types"
+import { Image } from "@react-three/drei"
+import type { Memory, MemoryExtended, TherapeuticTag } from "@/lib/types"
 
 interface Props {
   memory: Memory
@@ -45,62 +46,49 @@ function mulberry32(seed: number) {
 }
 
 /* ──────────────────────────────────────────
+   Therapeutic tag → size multiplier.
+   identity memories are the biggest (most
+   important for reminiscence), sensory the
+   smallest ambient nodes.
+   ────────────────────────────────────────── */
+const THERAPEUTIC_SIZE: Record<TherapeuticTag, number> = {
+  identity: 1.5,
+  family_bond: 1.35,
+  life_milestone: 1.25,
+  happy_place: 1.15,
+  daily_anchor: 1.0,
+  sensory: 0.9,
+}
+
+/* ──────────────────────────────────────────
    Procedural thumbnail per memory type.
    No external assets — pure geometry/canvas.
    ────────────────────────────────────────── */
 
 function PhotoThumbnail({ memory }: { memory: Memory }) {
-  const texture = useMemo(() => {
-    const seed = hashId(memory.id)
-    const rnd = mulberry32(seed)
-    const W = 128
-    const H = 96
-    const c = document.createElement("canvas")
-    c.width = W
-    c.height = H
-    const ctx = c.getContext("2d")!
-
-    const base = new THREE.Color(memory.color)
-    const dark = base.clone().multiplyScalar(0.35)
-    const light = base.clone().multiplyScalar(1.4)
-    const grad = ctx.createLinearGradient(0, 0, W, H)
-    grad.addColorStop(0, "#" + dark.getHexString())
-    grad.addColorStop(1, "#" + light.getHexString())
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, W, H)
-
-    for (let i = 0; i < 3; i++) {
-      const y = H * (0.4 + rnd() * 0.5)
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      for (let x = 0; x <= W; x += 8) {
-        ctx.lineTo(x, y + Math.sin((x / W) * Math.PI * 2 + rnd() * 6) * 4)
-      }
-      ctx.lineTo(W, H)
-      ctx.lineTo(0, H)
-      ctx.closePath()
-      ctx.fillStyle = `rgba(0,0,0,${0.15 + i * 0.1})`
-      ctx.fill()
-    }
-
-    const cx = W * (0.2 + rnd() * 0.6)
-    const cy = H * (0.15 + rnd() * 0.25)
-    const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22)
-    radial.addColorStop(0, "rgba(255,255,255,0.85)")
-    radial.addColorStop(1, "rgba(255,255,255,0)")
-    ctx.fillStyle = radial
-    ctx.fillRect(0, 0, W, H)
-
-    const tex = new THREE.CanvasTexture(c)
-    tex.colorSpace = THREE.SRGBColorSpace
-    tex.needsUpdate = true
-    return tex
-  }, [memory.id, memory.color])
+  const ext = memory as MemoryExtended
+  const [imgError, setImgError] = useState(false)
+  
+  const imageUrl = ext.thumbnailUrl || 'https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=150&auto=format&fit=crop'
 
   return (
     <mesh position={[0, 0, 0]} scale={[0.2, 0.15, 1]}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={texture} transparent opacity={0.95} toneMapped={false} />
+      {imageUrl && !imgError ? (
+        <Image 
+          url={imageUrl} 
+          transparent 
+          opacity={0.95} 
+          toneMapped={false} 
+          crossOrigin="anonymous"
+          onError={(e) => {
+            console.error("Error cargando imagen en MemoryToken:", e)
+            setImgError(true)
+          }}
+        />
+      ) : (
+        <meshBasicMaterial color={memory.color} transparent opacity={0.95} toneMapped={false} />
+      )}
     </mesh>
   )
 }
@@ -174,10 +162,39 @@ function MemoryThumbnail({ memory }: { memory: Memory }) {
 }
 
 /* ──────────────────────────────────────────
+   Family donation ring — golden torus that
+   slowly rotates around donated memories.
+   ────────────────────────────────────────── */
+function FamilyRing({ nodeSize }: { nodeSize: number }) {
+  const ref = useRef<THREE.Mesh>(null)
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.z += delta * 0.8
+  })
+  return (
+    <mesh ref={ref}>
+      <torusGeometry args={[nodeSize * 7, nodeSize * 0.5, 8, 32]} />
+      <meshBasicMaterial
+        color="#F59E0B"
+        transparent
+        opacity={0.75}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  )
+}
+
+/* ──────────────────────────────────────────
    The MemoryToken: an octahedral crystal that
    refracts light, levitates with a unique offset
    per id, AND morphs smoothly toward a target
    world position when the brain mode changes.
+
+   Enhanced with:
+   - Therapeutic tag–based sizing
+   - Organic breathing oscillation per node
+   - Golden family donation ring
    ────────────────────────────────────────── */
 export function MemoryToken({
   memory,
@@ -197,6 +214,13 @@ export function MemoryToken({
   const currentPos = useRef(position.clone())
 
   const offset = useMemo(() => hashId(memory.id) % 1000, [memory.id])
+
+  // Extended memory fields (therapeutic tag, family donation)
+  const ext = memory as MemoryExtended
+  const therapeuticSize = ext.therapeuticTag
+    ? THERAPEUTIC_SIZE[ext.therapeuticTag]
+    : 1.0
+  const isFamilyDonation = ext.isFamilyDonation && ext.injectionStatus === "active"
 
   const geometry = useMemo(() => {
     const geo = new THREE.OctahedronGeometry(0.18, detail)
@@ -222,17 +246,30 @@ export function MemoryToken({
     )
 
     if (innerRef.current) {
-      innerRef.current.rotation.y += 0.004
-      const targetScale = isHighlighted ? 1.0 : hovered ? 1.18 : 1.0
+      // ── ROTATION: unique per node
+      innerRef.current.rotation.y += delta * (0.2 + (offset % 5) * 0.1)
+      innerRef.current.rotation.x += delta * (0.1 + (offset % 3) * 0.05)
+
+      // ── BREATHING: organic oscillation unique to each node
+      const breathPhase = offset * 0.4
+      const breathing = 1 + Math.sin(t * 0.8 + breathPhase) * 0.12
+
+      // ── SCALE: therapeutic size × breathing × hover/highlight
+      const interactionScale = isHighlighted ? 1.0 : hovered ? 1.18 : 1.0
+      const targetScale = therapeuticSize * breathing * interactionScale
+
+      // Hover gets a fast pulse overlay
+      const hoverPulse = hovered ? 1 + Math.sin(t * 4) * 0.08 : 1.0
+
       const cur = innerRef.current.scale.x
-      const next = cur + (targetScale - cur) * 0.12
+      const next = cur + (targetScale * hoverPulse - cur) * 0.12
       innerRef.current.scale.setScalar(next)
     }
 
     if (haloRef.current) {
       const beat =
         (Math.sin(t * 0.9 + offset) * 0.5 + 0.5) * 0.3 + (isHighlighted ? 1.6 : 1.25)
-      haloRef.current.scale.setScalar(beat)
+      haloRef.current.scale.setScalar(beat * therapeuticSize)
     }
   })
 
@@ -271,7 +308,7 @@ export function MemoryToken({
           opacity={0.78 * visibility}
           roughness={0.05}
           metalness={0.1}
-          transmission={0.4}
+          transmission={isFamilyDonation ? 0.3 : 0.4}
           thickness={0.5}
           ior={1.8}
           envMapIntensity={2.0}
@@ -296,7 +333,13 @@ export function MemoryToken({
         />
       </mesh>
 
-      {isHighlighted && <pointLight color={memory.color} intensity={1.5} distance={2} />}
+      {/* Golden ring for family donations */}
+      {isFamilyDonation && <FamilyRing nodeSize={0.18 * therapeuticSize} />}
+
+      {/* Point light on highlighted and identity nodes */}
+      {(isHighlighted || ext.therapeuticTag === "identity") && (
+        <pointLight color={memory.color} intensity={1.5} distance={2} />
+      )}
     </group>
   )
 }
