@@ -69,7 +69,15 @@ function PhotoThumbnail({ memory }: { memory: Memory }) {
   const ext = memory as MemoryExtended
   const [imgError, setImgError] = useState(false)
   
-  const imageUrl = ext.thumbnailUrl || 'https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=150&auto=format&fit=crop'
+  const rawUrl = ext.thumbnailUrl || (memory as any).imageUrl
+
+  const safeUrl = rawUrl && 
+    !rawUrl.includes('undefined') && 
+    !rawUrl.includes('null')
+    ? rawUrl 
+    : null
+
+  const imageUrl = safeUrl
 
   return (
     <mesh position={[0, 0, 0]} scale={[0.2, 0.15, 1]}>
