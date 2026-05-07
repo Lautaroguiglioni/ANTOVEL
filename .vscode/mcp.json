@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "D:/ANTOVEL"]
+    },
+    "unsplash": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-unsplash"],
+      "env": {
+        "UNSPLASH_ACCESS_KEY": "TU_KEY"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "TU_TOKEN"
+      }
+    }
+  }
+}

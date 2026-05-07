@@ -39,7 +39,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${syne.variable} ${dmSans.variable} bg-background`}>
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${syne.variable} ${dmSans.variable} bg-background`}
+    >
       <body className="font-sans antialiased text-foreground">
         <MobileLayout>{children}</MobileLayout>
         {process.env.NODE_ENV === "production" && <Analytics />}

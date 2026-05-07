@@ -12,6 +12,17 @@ import { GeoPanel } from "@/components/brain/GeoPanel"
 import { MemoryCapsule } from "@/components/brain/MemoryCapsule"
 import { ModeBar } from "@/components/brain/ModeBar"
 
+const DEMO_PROFILE: AntovelProfile = {
+  name: "Lautaro",
+  birthDate: "1992-07-04",
+  city: "Colón, Entre Ríos",
+  pronouns: "él",
+  purposes: ["memories", "leave-mark", "discover-patterns"],
+  privacy: "private",
+  createdAt: "2026-05-06T00:00:00.000Z",
+  onboardingCompleted: true,
+}
+
 /**
  * Brain HUD page. The 3D canvas itself lives in the (main) layout
  * (PersistentBrainScene) so it stays mounted across tab navigations.
@@ -40,7 +51,9 @@ export default function BrainPage() {
   useEffect(() => {
     const p = loadProfile()
     if (!p?.onboardingCompleted) {
-      router.replace("/onboarding")
+      setProfile(DEMO_PROFILE)
+      initializeFromProfile(DEMO_PROFILE.birthDate)
+      setHydrated(true)
       return
     }
     setProfile(p)

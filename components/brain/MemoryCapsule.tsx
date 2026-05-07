@@ -31,6 +31,7 @@ export function MemoryCapsule({ memory, related, onClose, onSelectRelated }: Pro
   const visible = !!memory
   const accent = memory ? MEMORY_TYPE_COLOR[memory.type] : "#7C3AED"
   const Icon = memory ? TYPE_ICONS[memory.type] : ImageIcon
+  const mediaUrl = memory?.thumbnailUrl || memory?.imageUrl
 
   return (
     <AnimatePresence>
@@ -108,9 +109,9 @@ export function MemoryCapsule({ memory, related, onClose, onSelectRelated }: Pro
 
               {/* Hero media */}
               <div className="relative h-56 w-full overflow-hidden sm:h-64">
-                {memory.thumbnailUrl ? (
+                {mediaUrl ? (
                   <Image
-                    src={memory.thumbnailUrl || "/placeholder.svg"}
+                    src={mediaUrl}
                     alt={memory.title}
                     fill
                     sizes="560px"

@@ -28,13 +28,15 @@ export function PostFX({ bloomRadius = 0.8, enableChromaticAberration = true }: 
         mipmapBlur
         radius={bloomRadius}
       />
-      {enableChromaticAberration && (
+      {enableChromaticAberration ? (
         <ChromaticAberration
           blendFunction={BlendFunction.NORMAL}
           offset={new Vector2(0.0008, 0.0008)}
           radialModulation={false}
           modulationOffset={0}
         />
+      ) : (
+        <></>
       )}
       <Vignette offset={0.4} darkness={0.7} blendFunction={BlendFunction.NORMAL} />
     </EffectComposer>

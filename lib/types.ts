@@ -55,9 +55,12 @@ export interface Memory {
   tags: string[]
   location: MemoryLocation | null
   thumbnailUrl?: string
+  imageUrl?: string // alternative to thumbnailUrl for globe/UI components
   duration?: string // for audio/video
   description?: string
   color: string // hex, derived from type
+  lat?: number // optional direct latitude for globe components
+  lng?: number // optional direct longitude for globe components
 }
 
 export interface Connection {

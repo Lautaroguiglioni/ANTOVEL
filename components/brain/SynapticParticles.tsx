@@ -59,6 +59,7 @@ export function SynapticParticles({ count = 300 }: Props) {
   return (
     <points ref={ref}>
       <bufferGeometry>
+        {/* @ts-ignore - BufferAttribute type mismatch in react-three-fiber */}
         <bufferAttribute
           attach="attributes-position"
           count={count}

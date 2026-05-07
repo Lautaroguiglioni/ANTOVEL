@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useFrame } from "@react-three/fiber"
 import type { ThreeEvent } from "@react-three/fiber"
 import * as THREE from "three"
-import { Image } from "@react-three/drei"
+import { Billboard, Image, Text } from "@react-three/drei"
 import type { Memory, MemoryExtended, TherapeuticTag } from "@/lib/types"
 
 interface Props {
@@ -67,7 +67,6 @@ const THERAPEUTIC_SIZE: Record<TherapeuticTag, number> = {
 
 function PhotoThumbnail({ memory }: { memory: Memory }) {
   const ext = memory as MemoryExtended
-  const [imgError, setImgError] = useState(false)
   
   const rawUrl = ext.thumbnailUrl || (memory as any).imageUrl
 
@@ -82,17 +81,12 @@ function PhotoThumbnail({ memory }: { memory: Memory }) {
   return (
     <mesh position={[0, 0, 0]} scale={[0.2, 0.15, 1]}>
       <planeGeometry args={[1, 1]} />
-      {imageUrl && !imgError ? (
+      {imageUrl ? (
         <Image 
           url={imageUrl} 
           transparent 
           opacity={0.95} 
-          toneMapped={false} 
-          crossOrigin="anonymous"
-          onError={(e) => {
-            console.error("Error cargando imagen en MemoryToken:", e)
-            setImgError(true)
-          }}
+          toneMapped={false}
         />
       ) : (
         <meshBasicMaterial color={memory.color} transparent opacity={0.95} toneMapped={false} />
@@ -299,6 +293,7 @@ export function MemoryToken({
 
   const emissiveBoost = isHighlighted ? 2.0 : hovered ? 1.4 : 0.6
   const haloOpacity = isHighlighted ? 0.18 : hovered ? 0.1 : 0.05
+  const year = new Date(memory.date).getFullYear()
 
   return (
     <group
@@ -347,6 +342,46 @@ export function MemoryToken({
       {/* Point light on highlighted and identity nodes */}
       {(isHighlighted || ext.therapeuticTag === "identity") && (
         <pointLight color={memory.color} intensity={1.5} distance={2} />
+      )}
+
+      {(hovered || isHighlighted) && (
+        <Billboard position={[0, 0.48 * therapeuticSize, 0]} follow>
+          <group>
+            <mesh position={[0, -0.02, -0.01]}>
+              <planeGeometry args={[1.45, 0.42]} />
+              <meshBasicMaterial
+                color="#05050b"
+                transparent
+                opacity={0.78}
+                depthWrite={false}
+              />
+            </mesh>
+            <Text
+              position={[0, 0.06, 0]}
+              fontSize={0.075}
+              maxWidth={1.25}
+              textAlign="center"
+              anchorX="center"
+              anchorY="middle"
+              color="#ffffff"
+              outlineWidth={0.004}
+              outlineColor="#000000"
+            >
+              {memory.title}
+            </Text>
+            <Text
+              position={[0, -0.09, 0]}
+              fontSize={0.055}
+              anchorX="center"
+              anchorY="middle"
+              color={memory.color}
+              outlineWidth={0.003}
+              outlineColor="#000000"
+            >
+              {`${year} · click para abrir`}
+            </Text>
+          </group>
+        </Billboard>
       )}
     </group>
   )

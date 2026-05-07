@@ -24,7 +24,8 @@ interface Props {
   paused?: boolean
 }
 
-function BrainErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function BrainErrorFallback({ error, resetErrorBoundary }: { error: unknown; resetErrorBoundary: () => void }) {
+  const message = error instanceof Error ? error.message : "Error desconocido"
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#06060c] p-6 text-center">
       <div className="rounded-full bg-red-500/20 p-4">
@@ -32,7 +33,7 @@ function BrainErrorFallback({ error, resetErrorBoundary }: { error: Error; reset
       </div>
       <div>
         <h3 className="mb-2 text-lg font-semibold text-foreground">El motor 3D experimentó un fallo</h3>
-        <p className="max-w-xs text-sm text-muted-foreground">{error.message}</p>
+        <p className="max-w-xs text-sm text-muted-foreground">{message}</p>
       </div>
       <button 
         onClick={resetErrorBoundary}
